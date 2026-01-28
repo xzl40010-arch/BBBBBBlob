@@ -1,21 +1,15 @@
 //郑佳鑫
 //2026.1.28：第一次修改，凝固态触碰立即转为流动态，并播放“滋滋滋”音效
-
 using UnityEngine;
 
 public class HotPlate : MonoBehaviour
 {
-    // 播放“呲——”音效
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip sizzleClip;
+    
+    AudioController audiocontroller;
 
-    private void Awake()
+    private void Start()
     {
-        // 兼容未手动绑定的情况
-        if (audioSource == null)
-        {
-            audioSource = GetComponent<AudioSource>();
-        }
+        audiocontroller=GameObject.FindGameObjectWithTag("Audio").GetComponent<AudioController>();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -34,9 +28,8 @@ public class HotPlate : MonoBehaviour
 
         // 凝固态触碰立即转为流动态
         bool changed = player.EnterLiquidFromSolid();
-        if (changed && audioSource != null && sizzleClip != null)
-        {
-            audioSource.PlayOneShot(sizzleClip);
-        }
+        
+        // 播放“呲——”音效
+        audiocontroller.PlaySfx(audiocontroller.sizzleClip);
     }
 }
