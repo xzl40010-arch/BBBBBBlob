@@ -2,6 +2,8 @@
 // 2026.1.27：第一次修改，添加玩家脚本，记录出发点位置，死亡后重置，打印日志
 //2026.1.28：添加玩家状态机，玩家只能完成流动态→气化态和流动态→凝固态两种操作，玩家操作的形态切换之间存在0.3s冷却
 
+//许兆璘
+//2026.1.29：添加了移动接口，修改玩家初始状态为Liquid
 using UnityEngine;
 //玩家脚本 - 记录出发点位置，死亡后重置
 public class Player : MonoBehaviour
@@ -13,7 +15,7 @@ public class Player : MonoBehaviour
         Gas
     }
 
-    [SerializeField] private PlayerState currentState = PlayerState.Solid;
+    [SerializeField] private PlayerState currentState = PlayerState.Liquid;
     public PlayerState CurrentState => currentState;
 
     [SerializeField] private float switchCooldownSeconds = 0.3f;
@@ -98,5 +100,12 @@ public class Player : MonoBehaviour
 
         currentState = newState;
         Debug.Log($"玩家状态切换为: {currentState}");
+    }
+    public bool IsGrounded { get; private set; }
+
+    // 设置地面状态（由Movement脚本调用）
+    public void SetGrounded(bool grounded)
+    {
+        IsGrounded = grounded;
     }
 }
