@@ -4,12 +4,10 @@ using UnityEngine;
 
 public class HotPlate : MonoBehaviour
 {
-    
-    AudioController audiocontroller;
 
     private void Start()
     {
-        audiocontroller=GameObject.FindGameObjectWithTag("Audio").GetComponent<AudioController>();
+
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -28,8 +26,5 @@ public class HotPlate : MonoBehaviour
 
         // 凝固态触碰立即转为流动态
         bool changed = player.EnterLiquidFromSolid();
-        
-        // 播放“呲——”音效
-        audiocontroller.PlaySfx(audiocontroller.sizzleClip);
     }
 }

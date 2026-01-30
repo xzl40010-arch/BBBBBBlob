@@ -950,6 +950,12 @@ MonoBehaviour:
   bgm: {fileID: 8300000, guid: bc856868aa77fc74a9f7268cbbb468f0, type: 3}
   sizzleClip: {fileID: 8300000, guid: 1c91d1bcc8262da4f8a446381b0ae7e8, type: 3}
   fizzClip: {fileID: 8300000, guid: 6ccf0358378a4684b947d5f25e9e2704, type: 3}
+  toGasClip: {fileID: 8300000, guid: d2a738455073aa24e8406af7f484fd57, type: 3}
+  toSolidClip: {fileID: 8300000, guid: b444b677e78769d479e1a4eae7dd1d79, type: 3}
+  thronKillClip: {fileID: 8300000, guid: 0c94e34cc9eb2bf41a3cd59307714899, type: 3}
+  solidMoveClip: {fileID: 8300000, guid: 552dedfc3a344db43a171f7e34efa1b3, type: 3}
+  liquidMoveClip: {fileID: 8300000, guid: 7b857ca0d2b0f844ab9b9a8a8e1e153f, type: 3}
+  gasMoveClip: {fileID: 8300000, guid: d2a738455073aa24e8406af7f484fd57, type: 3}
 --- !u!4 &1931451281
 Transform:
   m_ObjectHideFlags: 0

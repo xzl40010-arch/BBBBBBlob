@@ -5,11 +5,9 @@ using UnityEngine;
 public class CoolingPlate : MonoBehaviour
 {
 
-    AudioController audiocontroller;
-
     private void Start()
     {
-       audiocontroller=GameObject.FindGameObjectWithTag("Audio").GetComponent<AudioController>();
+       
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -28,8 +26,5 @@ public class CoolingPlate : MonoBehaviour
 
         // 气化态触碰立即转为流动态
         bool changed = player.EnterLiquidFromGas();
-
-        //播放“滋滋滋”音效
-        audiocontroller.PlaySfx(audiocontroller.fizzClip);
     }
 }

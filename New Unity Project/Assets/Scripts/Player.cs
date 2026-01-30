@@ -4,6 +4,10 @@
 
 //许兆璘
 //2026.1.29：添加了移动接口，修改玩家初始状态为Liquid
+
+//阳成垚
+//2026.1.30：实现尖刺、状态转换的音效播放
+
 using UnityEngine;
 //玩家脚本 - 记录出发点位置，死亡后重置
 public class Player : MonoBehaviour
@@ -22,15 +26,22 @@ public class Player : MonoBehaviour
     private float lastPlayerSwitchTime = -999f;//记录上一次切换玩家角色的时间戳，初始值设为负数可以确保游戏刚启动时就满足冷却条件。
 
     private Vector3 spawnPoint; // 出发点位置
+
+    AudioController audiocontroller;// 音效控制
     private void Start()
     {
         // 记录玩家的初始位置作为出发点
         spawnPoint = transform.position;
         Debug.Log($"玩家出发点已设置: {spawnPoint}");
+
+        audiocontroller=GameObject.FindGameObjectWithTag("Audio").GetComponent<AudioController>();
     }
     // 玩家死亡，重置到出发点
     public void Die()
     {
+        // 播放尖刺音效
+        audiocontroller.PlaySfx(audiocontroller.thronKillClip);
+
         Debug.Log("玩家触碰尖刺！回到出发点");
         transform.position = spawnPoint;
     }
@@ -42,6 +53,8 @@ public class Player : MonoBehaviour
         {
             return false;
         }
+        // 播放“呲——”音效
+        audiocontroller.PlaySfx(audiocontroller.sizzleClip);
 
         SetState(PlayerState.Liquid);
         return true;
@@ -54,6 +67,8 @@ public class Player : MonoBehaviour
         {
             return false;
         }
+        //播放“滋滋滋”音效
+        audiocontroller.PlaySfx(audiocontroller.fizzClip);
 
         SetState(PlayerState.Liquid);
         return true;
@@ -66,6 +81,8 @@ public class Player : MonoBehaviour
         {
             return false;
         }
+        //播放转换音效
+        audiocontroller.PlaySfx(audiocontroller.toGasClip);
 
         SetState(PlayerState.Gas);
         lastPlayerSwitchTime = Time.time;
@@ -79,6 +96,8 @@ public class Player : MonoBehaviour
         {
             return false;
         }
+        //播放转换音效
+        audiocontroller.PlaySfx(audiocontroller.toSolidClip);
 
         SetState(PlayerState.Solid);
         lastPlayerSwitchTime = Time.time;
