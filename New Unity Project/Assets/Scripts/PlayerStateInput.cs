@@ -16,16 +16,27 @@ public class PlayerStateInput : MonoBehaviour
 
     private void Update()
     {
-        // 鼠标左键：流态 -> 气态
-        if (Input.GetMouseButtonDown(0))
+        if (player == null)
         {
-            player.TrySwitchToGasFromLiquid();
+            Debug.LogWarning("[PlayerStateInput] Player component missing");
+            return;
+        }
+
+        bool leftClick = Input.GetMouseButtonDown(0) || Input.GetButtonDown("Fire1");
+        bool rightClick = Input.GetMouseButtonDown(1) || Input.GetButtonDown("Fire2");
+
+        // 鼠标左键：流态 -> 气态
+        if (leftClick)
+        {
+            bool switched = player.TrySwitchToGasFromLiquid();
+            Debug.Log($"[PlayerStateInput] Left input, switch to Gas: {switched}");
         }
 
         // 鼠标右键：流态 -> 凝固态
-        if (Input.GetMouseButtonDown(1))
+        if (rightClick)
         {
-            player.TrySwitchToSolidFromLiquid();
+            bool switched = player.TrySwitchToSolidFromLiquid();
+            Debug.Log($"[PlayerStateInput] Right input, switch to Solid: {switched}");
         }
     }
 }

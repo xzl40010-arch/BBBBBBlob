@@ -1,6 +1,7 @@
 //  郑佳鑫
 // 2026.1.27：第一次修改，添加玩家脚本，记录出发点位置，死亡后重置，打印日志
 //2026.1.28：添加玩家状态机，玩家只能完成流动态→气化态和流动态→凝固态两种操作，玩家操作的形态切换之间存在0.3s冷却
+// 2026.2.2：增加调试日志，显示玩家状态切换情况
 
 //许兆璘
 //2026.1.29：添加了移动接口，修改玩家初始状态为Liquid
@@ -28,6 +29,11 @@ public class Player : MonoBehaviour
     private Vector3 spawnPoint; // 出发点位置
 
     AudioController audiocontroller;// 音效控制
+    [Header("Forms (Scheme 2)")]
+    [SerializeField] private GameObject liquidForm;
+    [SerializeField] private GameObject gasForm;
+    [SerializeField] private GameObject solidForm;
+
     private void Start()
     {
         // 记录玩家的初始位置作为出发点
@@ -35,6 +41,7 @@ public class Player : MonoBehaviour
         Debug.Log($"玩家出发点已设置: {spawnPoint}");
 
         audiocontroller=GameObject.FindGameObjectWithTag("Audio").GetComponent<AudioController>();
+        ApplyFormVisibility(currentState);
     }
     // 玩家死亡，重置到出发点
     public void Die()
@@ -118,7 +125,21 @@ public class Player : MonoBehaviour
         }
 
         currentState = newState;
+        ApplyFormVisibility(currentState);
         Debug.Log($"玩家状态切换为: {currentState}");
+    }
+
+    private void ApplyFormVisibility(PlayerState state)
+    {
+        if (liquidForm == null || gasForm == null || solidForm == null)
+        {
+            Debug.LogWarning("[Player] Form references not set (liquid/gas/solid)");
+            return;
+        }
+
+        liquidForm.SetActive(state == PlayerState.Liquid);
+        gasForm.SetActive(state == PlayerState.Gas);
+        solidForm.SetActive(state == PlayerState.Solid);
     }
     public bool IsGrounded { get; private set; }
 
