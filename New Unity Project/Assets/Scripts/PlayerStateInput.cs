@@ -6,74 +6,105 @@
 //2026.2.3:修复协程启动问题
 
 
+
 using UnityEngine;
 
 [RequireComponent(typeof(Player))]
 public class PlayerStateInput : MonoBehaviour
 {
     private Player player;
-    private bool inputLocked = false;
-    private float inputLockTime = 0.1f; // 输入锁定时间
+
+    [Header("输入设置")]
+    [SerializeField] private KeyCode gasKey = KeyCode.Mouse0;     // 鼠标左键
+    [SerializeField] private KeyCode solidKey = KeyCode.Mouse1;   // 鼠标右键
+    [SerializeField] private KeyCode respawnKey = KeyCode.R;      // 重置位置
+    [SerializeField] private KeyCode suicideKey = KeyCode.T;      // 自杀重置
+
+    [Header("输入冷却")]
+    [SerializeField] private float inputCooldown = 0.1f;
+    private float lastInputTime = 0f;
 
     void Awake()
     {
         player = GetComponent<Player>();
-    }
 
-    void Start()
-    {
         if (player == null)
         {
-            Debug.LogError("PlayerStateInput: 找不到Player组件");
+            Debug.LogError("PlayerStateInput: 找不到Player组件!");
             enabled = false;
         }
     }
 
     void Update()
     {
-        if (player == null || inputLocked) return;
-
-        // 只在流动态时处理切换输入
-        if (player.CurrentState != Player.PlayerState.Liquid)
-        {
-            // 如果不在流动态，显示提示
-            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
-            {
-                Debug.Log("不在流动态，无法切换形态");
-            }
+        // 输入冷却检查
+        if (Time.time - lastInputTime < inputCooldown)
             return;
-        }
 
-        bool leftClick = Input.GetMouseButtonDown(0);
-        bool rightClick = Input.GetMouseButtonDown(1);
-
-        if (leftClick)
+        // 只在流动态时允许形态切换
+        if (player.CurrentState == Player.PlayerState.Liquid)
         {
-            Debug.Log($"帧{Time.frameCount}: 检测到鼠标左键点击");
-            bool switched = player.TrySwitchToGasFromLiquid();
-
-            if (switched)
+            HandleMorphInput();
+        }
+        else
+        {
+            // 如果不是流动态，按切换键给出提示
+            if (Input.GetKeyDown(gasKey) || Input.GetKeyDown(solidKey))
             {
-                // 成功切换后锁定输入一小段时间
-                StartCoroutine(LockInput());
+                Debug.Log("当前不是流动态，无法切换形态");
             }
         }
-        else if (rightClick)
-        {
-            Debug.Log($"帧{Time.frameCount}: 检测到鼠标右键点击");
-            bool switched = player.TrySwitchToSolidFromLiquid();
 
-            if (switched)
-            {
-                StartCoroutine(LockInput());
-            }
+        // 功能键（不受状态限制）
+        HandleFunctionKeys();
+    }
+
+    void HandleMorphInput()
+    {
+        bool switchAttempted = false;
+
+        if (Input.GetKeyDown(gasKey))
+        {
+            Debug.Log($"切换气态输入: 帧{Time.frameCount}");
+            switchAttempted = player.TrySwitchToGas();
+        }
+        else if (Input.GetKeyDown(solidKey))
+        {
+            Debug.Log($"切换固态输入: 帧{Time.frameCount}");
+            switchAttempted = player.TrySwitchToSolid();
+        }
+
+        if (switchAttempted)
+        {
+            lastInputTime = Time.time;
         }
     }
 
-    System.Collections.IEnumerator LockInput()
+    void HandleFunctionKeys()
     {
-        inputLocked = true;
-        yield return new WaitForSeconds(inputLockTime);
-        inputLocked = false;
+        if (Input.GetKeyDown(respawnKey))
+        {
+            Debug.Log("重置到出生点");
+            player.transform.position = Vector3.zero; // 暂时，实际应该有存档点
+        }
+
+        if (Input.GetKeyDown(suicideKey))
+        {
+            Debug.Log("自杀重置");
+            player.Die();
+        }
+    }
+
+    void OnGUI()
+    {
+        // 简单的输入提示
+        GUILayout.BeginArea(new Rect(10, Screen.height - 100, 300, 100));
+        GUILayout.Label("=== 操作说明 ===");
+        GUILayout.Label($"当前状态: {player.CurrentState}");
+        GUILayout.Label("鼠标左键: 切换到气态");
+        GUILayout.Label("鼠标右键: 切换到固态");
+        GUILayout.Label("R键: 回到出生点");
+        GUILayout.Label("T键: 自杀重置");
+        GUILayout.EndArea();
     }
 }
