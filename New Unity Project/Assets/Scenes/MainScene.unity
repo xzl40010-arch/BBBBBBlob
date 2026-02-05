@@ -723,7 +723,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0.26302347, g: 0.37419993, b: 0.899371, a: 1}
+      maxColor: {r: 0.26274517, g: 0.8980392, b: 0.27861214, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -5510,7 +5510,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: 1bb4f1102bd22374da13213910c4c65a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -20642,8 +20642,8 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1369205575}
   serializedVersion: 8
-  lengthInSec: 5
-  simulationSpeed: 1
+  lengthInSec: 3
+  simulationSpeed: 5
   stopAction: 0
   cullingMode: 0
   ringBufferMode: 0
@@ -20771,7 +20771,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 3
       scalar: 1
-      minScalar: 0.2
+      minScalar: 0
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -25374,7 +25374,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!58 &1391875518
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -30842,7 +30842,7 @@ MonoBehaviour:
   stepCheckDistance: 0.5
   groundLayer:
     serializedVersion: 2
-    m_Bits: 55
+    m_Bits: 4294967295
 --- !u!114 &2050732536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30860,6 +30860,9 @@ MonoBehaviour:
   liquidForm: {fileID: 341107890}
   gasForm: {fileID: 2109129942}
   solidForm: {fileID: 1391875517}
+  solidSwitchVfx: {fileID: 340928074}
+  liquidSwitchVfx: {fileID: 483845214}
+  gasSwitchVfx: {fileID: 1369205578}
 --- !u!50 &2050732537
 Rigidbody2D:
   serializedVersion: 4

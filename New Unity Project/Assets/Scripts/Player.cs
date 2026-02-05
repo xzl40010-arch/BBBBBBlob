@@ -22,8 +22,8 @@ public class Player : MonoBehaviour
 
     [SerializeField] private PlayerState currentState = PlayerState.Liquid;
     public PlayerState CurrentState => currentState;
-
-    [SerializeField] private float switchCooldownSeconds = 0.3f;
+//测试改动将0.3改为0    ---------------------------------------------------
+    [SerializeField] private float switchCooldownSeconds = 0f;
     private float lastPlayerSwitchTime = -999f;
     private Vector3 spawnPoint;
 
@@ -35,7 +35,11 @@ public class Player : MonoBehaviour
     [SerializeField] private GameObject liquidForm;
     [SerializeField] private GameObject gasForm;
     [SerializeField] private GameObject solidForm;
-
+    
+    [Header("形态切换特效")]
+[SerializeField] private ParticleSystem solidSwitchVfx;
+[SerializeField] private ParticleSystem liquidSwitchVfx;
+[SerializeField] private ParticleSystem gasSwitchVfx;
     // 调试：记录切换次数
     private int switchCount = 0;
 
@@ -64,12 +68,15 @@ public class Player : MonoBehaviour
     }
 
     void Update()
-    {
+    {/*
         // 调试：按空格显示当前状态
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Debug.Log($"[帧{Time.frameCount}] 当前状态: {currentState}, 切换次数: {switchCount}");
         }
+*/  //测试用！！！！！！！！！！！！！！！！
+
+//---------------------------
     }
 
     // ========== 机关触发的方法（必须保留） ==========
@@ -173,6 +180,37 @@ public class Player : MonoBehaviour
         return false;
     }
 
+    //特效测试用  2.5 ！！！！！！形态全切换
+    public bool TrySwitchToLiquidFromGas()
+{
+    if (currentState != PlayerState.Gas) return false;
+    if (!IsPlayerSwitchReady()) return false;
+
+    if (SetState(PlayerState.Liquid))
+    {
+        lastPlayerSwitchTime = Time.time;
+        switchCount++;
+        Debug.Log($"切换到流态成功! 切换次数: {switchCount}");
+        return true;
+    }
+    return false;
+}
+
+public bool TrySwitchToLiquidFromSolid()
+{
+    if (currentState != PlayerState.Solid) return false;
+    if (!IsPlayerSwitchReady()) return false;
+
+    if (SetState(PlayerState.Liquid))
+    {
+        lastPlayerSwitchTime = Time.time;
+        switchCount++;
+        Debug.Log($"切换到流态成功! 切换次数: {switchCount}");
+        return true;
+    }
+    return false;
+}
+
     // ========== 死亡和重置 ==========
 
     public void Die()
@@ -182,11 +220,17 @@ public class Player : MonoBehaviour
         transform.position = spawnPoint;
         ForceSetState(PlayerState.Liquid);
     }
-
-    private bool ForceSetState(PlayerState newState)
+//修改private为public  -----------------------测试用
+    public bool ForceSetState(PlayerState newState)
     {
         PlayerState oldState = currentState;
         currentState = newState;
+
+        //测试用-------------------------------------
+        // 强制切换也播一次切换特效
+        PlaySwitchVfx(newState);
+
+        //-----------------
         ApplyFormVisibility(currentState);
 
         // 立即通知PlayerMovement更新物理
@@ -220,6 +264,9 @@ public class Player : MonoBehaviour
         PlayerState oldState = currentState;
         currentState = newState;
 
+        //状态改变时：播一次切换特效
+        PlaySwitchVfx(newState);
+
         ApplyFormVisibility(currentState);
         Debug.Log($"SetState成功: {oldState} -> {currentState}");
 
@@ -241,6 +288,32 @@ public class Player : MonoBehaviour
 
         Debug.Log($"ApplyFormVisibility: 设置形态可见性 - Liquid: {state == PlayerState.Liquid}, Gas: {state == PlayerState.Gas}, Solid: {state == PlayerState.Solid}");
     }
+
+    //2.5 文振一 调用特效
+private void PlaySwitchVfx(PlayerState newState)
+{
+    ParticleSystem ps = null;
+
+    switch (newState)
+    {
+        case PlayerState.Solid:
+            ps = solidSwitchVfx;
+            break;
+        case PlayerState.Liquid:
+            ps = liquidSwitchVfx;
+            break;
+        case PlayerState.Gas:
+            ps = gasSwitchVfx;
+            break;
+    }
+
+    if (ps == null) return;
+
+    ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+    ps.Play(true);
+}
+
+
 
     public bool IsGrounded { get; private set; }
     public void SetGrounded(bool grounded) => IsGrounded = grounded;
