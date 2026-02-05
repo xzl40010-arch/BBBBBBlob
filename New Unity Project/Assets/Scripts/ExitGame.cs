@@ -1,3 +1,6 @@
+//编辑器内：点击按钮会停止播放模式（便于调试）。
+//已打包的独立平台（Windows/macOS/Linux）：点击按钮会正常退出应用。
+//WebGL：浏览器不允许主动关闭页面，Quit 会被忽略并仅输出日志。
 using UnityEngine;
 using UnityEngine.UI;
 
