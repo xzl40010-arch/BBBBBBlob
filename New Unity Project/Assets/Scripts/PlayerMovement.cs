@@ -1,10 +1,10 @@
-//2026.1.29:ÐíÕ×­U
-//Ìí¼ÓA¡¢D¼ü×óÓÒÒÆ¶¯¹¦ÄÜ
+//2026.1.29:ï¿½ï¿½ï¿½×­U
+//ï¿½ï¿½ï¿½Aï¿½ï¿½Dï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½
 
 //xzl
-//2026.2.3:ÐÞ¸´ÁËÎïÀíÄ£ÐÍÃ»ÓÐÁ¢¼´¸üÐÂµÄbug
-//2026.2.3:Ìí¼ÓForceUpdatePhysics·½·¨£¬È·±£×´Ì¬ÇÐ»»Ê±Á¢¼´¸üÐÂÎïÀí
-//2026.2.5£ºÌí¼ÓÁËÌì»¨°åµÄÅö×²
+//2026.2.3:ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½bug
+//2026.2.3:ï¿½ï¿½ï¿½ForceUpdatePhysicsï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½×´Ì¬ï¿½Ð»ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//2026.2.5ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½ï¿½ï¿½ï¿½×²
 
 
 
@@ -13,53 +13,53 @@ using UnityEngine;
 [RequireComponent(typeof(Player))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("ÒÆ¶¯²ÎÊý")]
+    [Header("ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float acceleration = 20f;
     [SerializeField] private float deceleration = 20f;
 
-    [Header("×´Ì¬ÎïÀí²ÎÊý")]
+    [Header("×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
     [SerializeField] private float liquidGravity = 15f;
     [SerializeField] private float solidGravity = 20f;
-    [SerializeField] private float gasGravity = -8f;  // ¸ºÖµ±íÊ¾ÏòÉÏÆ¯¸¡
+    [SerializeField] private float gasGravity = -8f;  // ï¿½ï¿½Öµï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Æ¯ï¿½ï¿½
 
-    [Header("ÆøÌ¬ÌØÊâÉèÖÃ")]
-    [SerializeField] private float gasFloatSpeed = 3f;        // »ù´¡Æ¯¸¡ËÙ¶È
-    [SerializeField] private float gasMaxFloatSpeed = 5f;     // ×î´óÆ¯¸¡ËÙ¶È
-    [SerializeField] private bool gasBounceFromCeiling = true; // ÊÇ·ñ´ÓÌì»¨°å·´µ¯
-    [SerializeField] private float gasBounceFactor = 0.5f;    // ·´µ¯ÏµÊý
+    [Header("ï¿½ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
+    [SerializeField] private float gasFloatSpeed = 3f;        // ï¿½ï¿½ï¿½ï¿½Æ¯ï¿½ï¿½ï¿½Ù¶ï¿½
+    [SerializeField] private float gasMaxFloatSpeed = 5f;     // ï¿½ï¿½ï¿½Æ¯ï¿½ï¿½ï¿½Ù¶ï¿½
+    [SerializeField] private bool gasBounceFromCeiling = true; // ï¿½Ç·ï¿½ï¿½ï¿½ì»¨ï¿½å·´ï¿½ï¿½
+    [SerializeField] private float gasBounceFactor = 0.5f;    // ï¿½ï¿½ï¿½ï¿½Ïµï¿½ï¿½
 
-    [Header("Ì¨½×ÅÊµÇ")]
+    [Header("Ì¨ï¿½ï¿½ï¿½Êµï¿½")]
     [SerializeField] private float stepHeight = 0.5f;
     [SerializeField] private float stepCheckDistance = 0.5f;
     [SerializeField] private LayerMask groundLayer;
 
-    [Header("Ìì»¨°å¼ì²â")]
+    [Header("ï¿½ì»¨ï¿½ï¿½ï¿½ï¿½")]
     [SerializeField] private float ceilingCheckDistance = 0.5f;
     [SerializeField] private bool showCeilingDebug = true;
 
-    [Header("ÎïÀí²ÄÖÊ")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
     [SerializeField] private PhysicsMaterial2D liquidPhysicsMaterial;
     [SerializeField] private PhysicsMaterial2D solidPhysicsMaterial;
     [SerializeField] private PhysicsMaterial2D gasPhysicsMaterial;
 
-    // ×é¼þÒýÓÃ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private Rigidbody2D rb;
     private Collider2D col;
     private Player player;
 
-    // ÒÆ¶¯×´Ì¬
+    // ï¿½Æ¶ï¿½×´Ì¬
     private float horizontalInput;
     private float targetVelocityX;
     private float currentVelocityX;
     private bool isGrounded;
     private bool isTouchingCeiling;
 
-    // ×´Ì¬¸ú×Ù
+    // ×´Ì¬ï¿½ï¿½ï¿½ï¿½
     private Player.PlayerState lastAppliedState;
     private Player.PlayerState previousState;
 
-    // Ê±¼ä¸ú×Ù
+    // Ê±ï¿½ï¿½ï¿½ï¿½ï¿½
     private float gasSwitchTime = 0f;
 
     void Start()
@@ -73,11 +73,11 @@ public class PlayerMovement : MonoBehaviour
             lastAppliedState = player.CurrentState;
             previousState = player.CurrentState;
             ApplyPhysicsForState(lastAppliedState, true);
-            Debug.Log($"PlayerMovement³õÊ¼»¯: ×´Ì¬={lastAppliedState}");
+            Debug.Log($"PlayerMovementï¿½ï¿½Ê¼ï¿½ï¿½: ×´Ì¬={lastAppliedState}");
         }
         else
         {
-            Debug.LogError("PlayerMovement: ÕÒ²»µ½Player×é¼þ!");
+            Debug.LogError("PlayerMovement: ï¿½Ò²ï¿½ï¿½ï¿½Playerï¿½ï¿½ï¿½!");
         }
     }
 
@@ -85,12 +85,12 @@ public class PlayerMovement : MonoBehaviour
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
 
-        // ¼ì²â×´Ì¬±ä»¯
+        // ï¿½ï¿½ï¿½×´Ì¬ï¿½ä»¯
         if (player != null && player.CurrentState != lastAppliedState)
         {
-            Debug.Log($"PlayerMovement¼ì²âµ½×´Ì¬±ä»¯: {lastAppliedState} -> {player.CurrentState}");
+            Debug.Log($"PlayerMovementï¿½ï¿½âµ½×´Ì¬ï¿½ä»¯: {lastAppliedState} -> {player.CurrentState}");
 
-            // ¼ÇÂ¼ÆøÌ¬ÇÐ»»Ê±¼ä
+            // ï¿½ï¿½Â¼ï¿½ï¿½Ì¬ï¿½Ð»ï¿½Ê±ï¿½ï¿½
             if (player.CurrentState == Player.PlayerState.Gas)
             {
                 gasSwitchTime = Time.time;
@@ -101,10 +101,10 @@ public class PlayerMovement : MonoBehaviour
             lastAppliedState = player.CurrentState;
         }
 
-        // µ÷ÊÔÐÅÏ¢
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
         if (Input.GetKeyDown(KeyCode.F2))
         {
-            Debug.Log($"ÒÆ¶¯µ÷ÊÔ - ×´Ì¬: {player?.CurrentState}, ËÙ¶È: {rb?.velocity}, µØÃæ: {isGrounded}, Ìì»¨°å: {isTouchingCeiling}");
+            Debug.Log($"ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½ - ×´Ì¬: {player?.CurrentState}, ï¿½Ù¶ï¿½: {rb?.velocity}, ï¿½ï¿½ï¿½ï¿½: {isGrounded}, ï¿½ì»¨ï¿½ï¿½: {isTouchingCeiling}");
         }
     }
 
@@ -112,11 +112,11 @@ public class PlayerMovement : MonoBehaviour
     {
         if (player == null || rb == null) return;
 
-        // ¼ì²éµØÃæºÍÌì»¨°å
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½
         CheckGround();
         CheckCeiling();
 
-        // ¸ù¾Ý×´Ì¬´¦ÀíÒÆ¶¯
+        // ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½
         switch (player.CurrentState)
         {
             case Player.PlayerState.Liquid:
@@ -130,7 +130,7 @@ public class PlayerMovement : MonoBehaviour
                 break;
         }
 
-        // È·±£ÎïÀíÐ§¹ûÕýÈ·Ó¦ÓÃ
+        // È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ï¿½È·Ó¦ï¿½ï¿½
         if (player.CurrentState != lastAppliedState)
         {
             ApplyPhysicsForState(player.CurrentState, true);
@@ -138,13 +138,13 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ========== ÎïÀí×´Ì¬Ó¦ÓÃ ==========
+    // ========== ï¿½ï¿½ï¿½ï¿½×´Ì¬Ó¦ï¿½ï¿½ ==========
 
     private void ApplyPhysicsForState(Player.PlayerState state, bool forceApply = false)
     {
         if (rb == null) return;
 
-        // Ó¦ÓÃ¶ÔÓ¦µÄÎïÀí²ÄÖÊ
+        // Ó¦ï¿½Ã¶ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (col != null)
         {
             switch (state)
@@ -166,46 +166,46 @@ public class PlayerMovement : MonoBehaviour
             case Player.PlayerState.Liquid:
                 rb.gravityScale = liquidGravity;
                 rb.mass = 1f;
-                if (forceApply) Debug.Log($"Ó¦ÓÃÒºÌåÎïÀí: ÖØÁ¦={liquidGravity}");
+                if (forceApply) Debug.Log($"Ó¦ï¿½ï¿½Òºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½={liquidGravity}");
                 break;
 
             case Player.PlayerState.Solid:
                 rb.gravityScale = solidGravity;
-                rb.mass = 2f; // ¸üÖØ
-                if (forceApply) Debug.Log($"Ó¦ÓÃ¹ÌÌåÎïÀí: ÖØÁ¦={solidGravity}, ÖÊÁ¿=2");
+                rb.mass = 2f; // ï¿½ï¿½ï¿½ï¿½
+                if (forceApply) Debug.Log($"Ó¦ï¿½Ã¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½={solidGravity}, ï¿½ï¿½ï¿½ï¿½=2");
                 break;
 
             case Player.PlayerState.Gas:
                 rb.gravityScale = gasGravity;
-                rb.mass = 0.5f; // ¸üÇá
-                if (forceApply) Debug.Log($"Ó¦ÓÃÆøÌåÎïÀí: ÖØÁ¦={gasGravity}, ÖÊÁ¿=0.5");
+                rb.mass = 0.5f; // ï¿½ï¿½ï¿½ï¿½
+                if (forceApply) Debug.Log($"Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½={gasGravity}, ï¿½ï¿½ï¿½ï¿½=0.5");
 
-                // ÇÐ»»µ½ÆøÌ¬Ê±¸øÓè³õÊ¼ÉÏ¸¡ËÙ¶È
+                // ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½Ì¬Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Ï¸ï¿½ï¿½Ù¶ï¿½
                 if (forceApply)
                 {
                     Vector2 velocity = rb.velocity;
                     velocity.y = Mathf.Max(gasFloatSpeed, velocity.y);
                     rb.velocity = velocity;
-                    if (showCeilingDebug) Debug.Log($"ÆøÌ¬ÇÐ»»: ÉèÖÃÉÏ¸¡ËÙ¶È {velocity.y}");
+                    if (showCeilingDebug) Debug.Log($"ï¿½ï¿½Ì¬ï¿½Ð»ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½Ù¶ï¿½ {velocity.y}");
                 }
                 break;
         }
 
     }
 
-    // ========== ÐÎÌ¬ÌØÓÐµÄÒÆ¶¯Âß¼­ ==========
+    // ========== ï¿½ï¿½Ì¬ï¿½ï¿½ï¿½Ðµï¿½ï¿½Æ¶ï¿½ï¿½ß¼ï¿½ ==========
 
     private void HandleLiquidMovement()
     {
         SmoothHorizontalMovement();
 
-        // ÒºÌåÌØÊâÄÜÁ¦£ºÌ¨½×ÅÊµÇ
+        // Òºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¨ï¿½ï¿½ï¿½Êµï¿½
         if (isGrounded && Mathf.Abs(horizontalInput) > 0.1f)
         {
             TryClimbStep();
         }
 
-        // ÒºÌåÕ³ÐÔ£ºÂäµØÊ±¼õÉÙµ¯Ìø
+        // Òºï¿½ï¿½Õ³ï¿½Ô£ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ùµï¿½ï¿½ï¿½
         if (isGrounded && Mathf.Abs(rb.velocity.y) > 0.1f)
         {
             rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.8f);
@@ -216,7 +216,7 @@ public class PlayerMovement : MonoBehaviour
     {
         SmoothHorizontalMovement();
 
-        // ¹ÌÌå¹ßÐÔ£º¼õËÙ¸üÂý
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½ï¿½Ù¸ï¿½ï¿½ï¿½
         if (Mathf.Abs(horizontalInput) < 0.1f)
         {
             Vector2 velocity = rb.velocity;
@@ -229,21 +229,21 @@ public class PlayerMovement : MonoBehaviour
     {
         SmoothHorizontalMovement();
 
-        // ´¦ÀíÌì»¨°åÅö×²
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½ï¿½ï¿½×²
         if (isTouchingCeiling)
         {
-            // Åöµ½Ìì»¨°åÊ±´¦Àí
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
             Vector2 velocity = rb.velocity;
 
             if (gasBounceFromCeiling)
             {
-                // ·´µ¯Ð§¹û
+                // ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½
                 velocity.y = -Mathf.Abs(velocity.y) * gasBounceFactor;
-                if (showCeilingDebug) Debug.Log($"Ìì»¨°å·´µ¯: ËÙ¶È {velocity.y}");
+                if (showCeilingDebug) Debug.Log($"ï¿½ì»¨ï¿½å·´ï¿½ï¿½: ï¿½Ù¶ï¿½ {velocity.y}");
             }
             else
             {
-                // Í£Ö¹ÉÏ¸¡£¬ÔÊÐíÇáÎ¢ÏÂÂä
+                // Í£Ö¹ï¿½Ï¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¢ï¿½ï¿½ï¿½ï¿½
                 velocity.y = Mathf.Min(velocity.y, -0.5f);
             }
 
@@ -251,20 +251,20 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            // Õý³£Æ¯¸¡Âß¼­
+            // ï¿½ï¿½ï¿½ï¿½Æ¯ï¿½ï¿½ï¿½ß¼ï¿½
             Vector2 velocity = rb.velocity;
 
-            // È·±£×îÐ¡ÉÏ¸¡ËÙ¶È£¨¸ÕÇÐ»»Ê±¸üÇ¿£©
+            // È·ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½Ï¸ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½Ð»ï¿½Ê±ï¿½ï¿½Ç¿ï¿½ï¿½
             float timeSinceSwitch = Time.time - gasSwitchTime;
             float currentFloatSpeed = gasFloatSpeed;
 
-            // ¸ÕÇÐ»»Ê±¸øÓè¶îÍâÍÆÁ¦
+            // ï¿½ï¿½ï¿½Ð»ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (timeSinceSwitch < 1f)
             {
                 currentFloatSpeed = Mathf.Lerp(gasFloatSpeed * 1.5f, gasFloatSpeed, timeSinceSwitch);
             }
 
-            // ³ÖÐøÉÏ¸¡
+            // ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½
             if (velocity.y < gasMaxFloatSpeed)
             {
                 velocity.y = Mathf.Min(velocity.y + currentFloatSpeed * Time.fixedDeltaTime, gasMaxFloatSpeed);
@@ -273,11 +273,11 @@ public class PlayerMovement : MonoBehaviour
             rb.velocity = velocity;
         }
 
-        // ÆøÌå²»»á½ÓµØ
+        // ï¿½ï¿½ï¿½å²»ï¿½ï¿½Óµï¿½
         player.SetGrounded(false);
     }
 
-    // ========== Ë®Æ½ÒÆ¶¯´¦Àí ==========
+    // ========== Ë®Æ½ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½ ==========
 
     private void SmoothHorizontalMovement()
     {
@@ -290,13 +290,13 @@ public class PlayerMovement : MonoBehaviour
         rb.velocity = velocity;
     }
 
-    // ========== Åö×²¼ì²â ==========
+    // ========== ï¿½ï¿½×²ï¿½ï¿½ï¿½ ==========
 
     private void CheckGround()
     {
         if (col == null || player == null) return;
 
-        // ÆøÌå²»»á¼ì²âµØÃæ
+        // ï¿½ï¿½ï¿½å²»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (player.CurrentState == Player.PlayerState.Gas)
         {
             isGrounded = false;
@@ -307,8 +307,8 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rayStart = transform.position;
         float rayLength = col.bounds.extents.y + 0.1f;
 
-        // ·¢Éä¶àÌõÉäÏßÈ·±£¼ì²â×¼È·
-        // ÐÞ¸´£ºÊ¹ÓÃVector2.leftºÍVector2.rightÌæ´úVector3
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½×¼È·
+        // ï¿½Þ¸ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Vector2.leftï¿½ï¿½Vector2.rightï¿½ï¿½ï¿½Vector3
         RaycastHit2D hitCenter = Physics2D.Raycast(rayStart, Vector2.down, rayLength, groundLayer);
         RaycastHit2D hitLeft = Physics2D.Raycast(rayStart + (Vector2.left * col.bounds.extents.x * 0.7f),
                                                  Vector2.down, rayLength, groundLayer);
@@ -324,7 +324,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (col == null || player == null) return;
 
-        // Ö»ÓÐÆøÌ¬ÐèÒª¼ì²âÌì»¨°å
+        // Ö»ï¿½ï¿½ï¿½ï¿½Ì¬ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½
         if (player.CurrentState != Player.PlayerState.Gas)
         {
             isTouchingCeiling = false;
@@ -334,8 +334,8 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rayStart = transform.position;
         float rayLength = col.bounds.extents.y + ceilingCheckDistance;
 
-        // ·¢Éä¶àÌõÉäÏß¼ì²âÌì»¨°å
-        // ÐÞ¸´£ºÊ¹ÓÃVector2.leftºÍVector2.rightÌæ´úVector3
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½
+        // ï¿½Þ¸ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Vector2.leftï¿½ï¿½Vector2.rightï¿½ï¿½ï¿½Vector3
         RaycastHit2D hitCenter = Physics2D.Raycast(rayStart, Vector2.up, rayLength, groundLayer);
         RaycastHit2D hitLeft = Physics2D.Raycast(rayStart + (Vector2.left * col.bounds.extents.x * 0.7f),
                                                  Vector2.up, rayLength, groundLayer);
@@ -344,14 +344,14 @@ public class PlayerMovement : MonoBehaviour
 
         isTouchingCeiling = hitCenter.collider != null || hitLeft.collider != null || hitRight.collider != null;
 
-        // µ÷ÊÔÊä³ö
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (showCeilingDebug && isTouchingCeiling && Time.frameCount % 30 == 0)
         {
-            Debug.Log($"´¥µ½Ìì»¨°å: ËÙ¶ÈY={rb.velocity.y:F2}");
+            Debug.Log($"ï¿½ï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½: ï¿½Ù¶ï¿½Y={rb.velocity.y:F2}");
         }
     }
 
-    // ========== ÌØÊâÄÜÁ¦ ==========
+    // ========== ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ==========
 
     private void TryClimbStep()
     {
@@ -370,15 +370,15 @@ public class PlayerMovement : MonoBehaviour
             if (heightDifference > 0 && heightDifference <= stepHeight)
             {
                 Vector3 newPosition = transform.position;
-                newPosition.y = stepTop + col.bounds.extents.y + 0.05f; // ÉÔÎ¢¸ßÒ»µã±ÜÃâ¿¨×¡
+                newPosition.y = stepTop + col.bounds.extents.y + 0.05f; // ï¿½ï¿½Î¢ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½â¿¨×¡
                 rb.MovePosition(newPosition);
 
-                Debug.Log($"ÅÊµÇÌ¨½×³É¹¦: ¸ß¶È²î={heightDifference:F2}");
+                Debug.Log($"ï¿½Êµï¿½Ì¨ï¿½×³É¹ï¿½: ï¿½ß¶È²ï¿½={heightDifference:F2}");
             }
         }
     }
 
-    // ========== ¹«¿ª·½·¨ ==========
+    // ========== ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ==========
 
     public float GetHorizontalInput()
     {
@@ -389,7 +389,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (player != null)
         {
-            Debug.Log($"Ç¿ÖÆ¸üÐÂÎïÀí×´Ì¬: {player.CurrentState}");
+            Debug.Log($"Ç¿ï¿½Æ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬: {player.CurrentState}");
             ApplyPhysicsForState(player.CurrentState, true);
             lastAppliedState = player.CurrentState;
         }
@@ -400,19 +400,19 @@ public class PlayerMovement : MonoBehaviour
         return isTouchingCeiling;
     }
 
-    // ========== µ÷ÊÔ¿ÉÊÓ»¯ ==========
+    // ========== ï¿½ï¿½ï¿½Ô¿ï¿½ï¿½Ó»ï¿½ ==========
 
     void OnDrawGizmosSelected()
     {
         if (col == null) return;
 
-        // µØÃæ¼ì²â¿ÉÊÓ»¯
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó»ï¿½
         Gizmos.color = isGrounded ? Color.green : Color.red;
         Vector3 groundStart = transform.position;
         Vector3 groundEnd = groundStart + Vector3.down * (col.bounds.extents.y + 0.1f);
         Gizmos.DrawLine(groundStart, groundEnd);
 
-        // Ìì»¨°å¼ì²â¿ÉÊÓ»¯£¨½öÆøÌ¬£©
+        // ï¿½ì»¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¬ï¿½ï¿½
         if (player != null && player.CurrentState == Player.PlayerState.Gas)
         {
             Gizmos.color = isTouchingCeiling ? Color.yellow : Color.cyan;
@@ -421,7 +421,7 @@ public class PlayerMovement : MonoBehaviour
             Gizmos.DrawLine(ceilingStart, ceilingEnd);
         }
 
-        // Ì¨½×¼ì²â¿ÉÊÓ»¯
+        // Ì¨ï¿½×¼ï¿½ï¿½ï¿½ï¿½Ó»ï¿½
         if (Mathf.Abs(horizontalInput) > 0.1f && player != null && player.CurrentState == Player.PlayerState.Liquid)
         {
             Gizmos.color = Color.blue;
@@ -430,32 +430,32 @@ public class PlayerMovement : MonoBehaviour
             Gizmos.DrawLine(stepCheckStart, stepCheckEnd);
         }
 
-        // ÏÔÊ¾µ±Ç°×´Ì¬
+        // ï¿½ï¿½Ê¾ï¿½ï¿½Ç°×´Ì¬
 #if UNITY_EDITOR
         GUIStyle style = new GUIStyle();
         style.normal.textColor = Color.white;
         style.fontSize = 12;
         UnityEditor.Handles.Label(transform.position + Vector3.up * 1.5f, 
-                                 $"×´Ì¬: {player?.CurrentState}\nµØÃæ: {isGrounded}\nÌì»¨°å: {isTouchingCeiling}", style);
+                                 $"×´Ì¬: {player?.CurrentState}\nï¿½ï¿½ï¿½ï¿½: {isGrounded}\nï¿½ì»¨ï¿½ï¿½: {isTouchingCeiling}", style);
 #endif
     }
 
-    // ========== Åö×²ÊÂ¼þ ==========
+    // ========== ï¿½ï¿½×²ï¿½Â¼ï¿½ ==========
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // ÌØÊâÅö×²´¦Àí
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ï¿½
         if (player != null && player.CurrentState == Player.PlayerState.Gas)
         {
-            // ÆøÌ¬Åö×²ÌØÊâ´¦Àí
+            // ï¿½ï¿½Ì¬ï¿½ï¿½×²ï¿½ï¿½ï¿½â´¦ï¿½ï¿½
             if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
             {
-                // ¼ì²éÊÇ·ñ´ÓÉÏ·½Åö×²£¨Ìì»¨°å£©
+                // ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ì»¨ï¿½å£©
                 foreach (ContactPoint2D contact in collision.contacts)
                 {
-                    if (contact.normal.y < -0.5f) // ´ÓÏÂ·½Åö×²£¨¶ÔÍæ¼ÒÀ´ËµÊÇÉÏ·½£©
+                    if (contact.normal.y < -0.5f) // ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½
                     {
-                        Debug.Log($"ÆøÌ¬´¥µ½Ìì»¨°å: ·¨Ïß={contact.normal}");
+                        Debug.Log($"ï¿½ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½={contact.normal}");
                         isTouchingCeiling = true;
                     }
                 }
@@ -465,7 +465,7 @@ public class PlayerMovement : MonoBehaviour
 
     void OnCollisionExit2D(Collision2D collision)
     {
-        // Àë¿ªÅö×²Ê±ÖØÖÃÌì»¨°å×´Ì¬
+        // ï¿½ë¿ªï¿½ï¿½×²Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ì»¨ï¿½ï¿½×´Ì¬
         if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
         {
             isTouchingCeiling = false;

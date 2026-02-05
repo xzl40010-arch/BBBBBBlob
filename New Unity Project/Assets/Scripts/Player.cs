@@ -2,7 +2,7 @@
 // 2026.1.27：第一次修改，添加玩家脚本，记录出发点位置，死亡后重置，打印日志
 //2026.1.28：添加玩家状态机，玩家只能完成流动态→气化态和流动态→凝固态两种操作，玩家操作的形态切换之间存在0.3s冷却
 // 2026.2.2：增加调试日志，显示玩家状态切换情况
-
+//2026.2.5：修复了状态切换时物理不同步的问题，增加记录存档功能
 //许兆璘
 //2026.1.29：添加了移动接口，修改玩家初始状态为Liquid
 
@@ -39,12 +39,20 @@ public class Player : MonoBehaviour
     [SerializeField] private Transform spawnPoint;
     private Vector3 defaultSpawn;
 
+    [Header("存档")]
+    [SerializeField] private bool clearArchiveOnStart = true;
+
     private Rigidbody2D rb;
     private AudioController audioController;
     private bool isInitialized = false;
 
     void Awake()
     {
+        if (clearArchiveOnStart)
+        {
+            ArchiveManager.Clear();
+        }
+
         rb = GetComponent<Rigidbody2D>();
 
         GameObject audioObj = GameObject.FindGameObjectWithTag("Audio");
@@ -183,7 +191,18 @@ public class Player : MonoBehaviour
         if (audioController != null)
             audioController.PlaySfx(audioController.thronKillClip);
 
-        transform.position = spawnPoint != null ? spawnPoint.position : defaultSpawn;
+        Vector3 respawnPos;
+        if (ArchiveManager.TryGetLatestPosition(out respawnPos))
+        {
+            Debug.Log($"[Player] Respawn at archive position: {respawnPos}");
+            transform.position = respawnPos;
+        }
+        else
+        {
+            transform.position = spawnPoint != null ? spawnPoint.position : defaultSpawn;
+            Debug.Log("[Player] Respawn at default spawn");
+        }
+
         ForceSetState(PlayerState.Liquid);
 
         if (rb != null)
