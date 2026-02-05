@@ -22,8 +22,8 @@ public class Player : MonoBehaviour
 
     [SerializeField] private PlayerState currentState = PlayerState.Liquid;
     public PlayerState CurrentState => currentState;
-//测试改动将0.3改为0    ---------------------------------------------------
-    [SerializeField] private float switchCooldownSeconds = 0f;
+
+    [SerializeField] private float switchCooldownSeconds = 0.3f;
     private float lastPlayerSwitchTime = -999f;
     private Vector3 spawnPoint;
 
@@ -68,15 +68,12 @@ public class Player : MonoBehaviour
     }
 
     void Update()
-    {/*
-        // 调试：按空格显示当前状态
+    {
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Debug.Log($"[帧{Time.frameCount}] 当前状态: {currentState}, 切换次数: {switchCount}");
         }
-*/  //测试用！！！！！！！！！！！！！！！！
 
-//---------------------------
     }
 
     // ========== 机关触发的方法（必须保留） ==========
@@ -180,36 +177,6 @@ public class Player : MonoBehaviour
         return false;
     }
 
-    //特效测试用  2.5 ！！！！！！形态全切换
-    public bool TrySwitchToLiquidFromGas()
-{
-    if (currentState != PlayerState.Gas) return false;
-    if (!IsPlayerSwitchReady()) return false;
-
-    if (SetState(PlayerState.Liquid))
-    {
-        lastPlayerSwitchTime = Time.time;
-        switchCount++;
-        Debug.Log($"切换到流态成功! 切换次数: {switchCount}");
-        return true;
-    }
-    return false;
-}
-
-public bool TrySwitchToLiquidFromSolid()
-{
-    if (currentState != PlayerState.Solid) return false;
-    if (!IsPlayerSwitchReady()) return false;
-
-    if (SetState(PlayerState.Liquid))
-    {
-        lastPlayerSwitchTime = Time.time;
-        switchCount++;
-        Debug.Log($"切换到流态成功! 切换次数: {switchCount}");
-        return true;
-    }
-    return false;
-}
 
     // ========== 死亡和重置 ==========
 
@@ -220,17 +187,12 @@ public bool TrySwitchToLiquidFromSolid()
         transform.position = spawnPoint;
         ForceSetState(PlayerState.Liquid);
     }
-//修改private为public  -----------------------测试用
-    public bool ForceSetState(PlayerState newState)
+
+    private bool ForceSetState(PlayerState newState)
     {
         PlayerState oldState = currentState;
         currentState = newState;
 
-        //测试用-------------------------------------
-        // 强制切换也播一次切换特效
-        PlaySwitchVfx(newState);
-
-        //-----------------
         ApplyFormVisibility(currentState);
 
         // 立即通知PlayerMovement更新物理

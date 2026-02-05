@@ -33,7 +33,7 @@ public class PlayerStateInput : MonoBehaviour
     void Update()
     {
         if (player == null || inputLocked) return;
-/*
+
         // 只在流动态时处理切换输入
         if (player.CurrentState != Player.PlayerState.Liquid)
         {
@@ -69,24 +69,7 @@ public class PlayerStateInput : MonoBehaviour
                 StartCoroutine(LockInput());
             }
         }
-*/   //测试用，所有形态切换都绑到左键
 
-    if (Input.GetMouseButtonDown(0))
-    {
-        Player.PlayerState next = player.CurrentState switch
-        {
-            Player.PlayerState.Liquid => Player.PlayerState.Gas,
-            Player.PlayerState.Gas => Player.PlayerState.Solid,
-            Player.PlayerState.Solid => Player.PlayerState.Liquid,
-            _ => Player.PlayerState.Liquid
-        };
-
-        player.ForceSetState(next);
-        Debug.Log($"【测试】强制切换到 {next}");
-
-        StartCoroutine(LockInput());
-    }
-//------------------------------------
     }
 
     System.Collections.IEnumerator LockInput()
