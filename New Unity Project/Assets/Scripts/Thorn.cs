@@ -8,19 +8,30 @@ public class Thorn : MonoBehaviour
 {
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log($"[Thorn] Trigger enter: name={collision.name}, tag={collision.tag}");
-        if (collision.CompareTag("Player"))
+        TryKillPlayer(collision, "Trigger");
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        TryKillPlayer(collision.collider, "Collision");
+    }
+
+    private void TryKillPlayer(Collider2D collider2D, string source)
+    {
+        if (collider2D == null) return;
+
+        Debug.Log($"[Thorn] {source} enter: name={collider2D.name}, tag={collider2D.tag}");
+
+        // Allow the collider to be on a child while Player is on the parent.
+        Player playerScript = collider2D.GetComponentInParent<Player>();
+        if (playerScript != null)
         {
-            Player playerScript = collision.GetComponent<Player>();
-            if (playerScript != null)
-            {
-                Debug.Log("[Thorn] Player script found, calling Die()");
-                playerScript.Die();
-            }
-            else
-            {
-                Debug.LogWarning("[Thorn] Player tag found but Player component missing");
-            }
+            Debug.Log("[Thorn] Player script found, calling Die()");
+            playerScript.Die();
+        }
+        else
+        {
+            Debug.LogWarning("[Thorn] Player component not found on collider or parent");
         }
     }
 }
