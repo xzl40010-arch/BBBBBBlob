@@ -2965,7 +2965,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0086035c0e551964cbcaf35f421f17c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetScene: MainScene
+  targetScene: TestScene
   delayTime: 0
 --- !u!1 &2122172433
 GameObject:
