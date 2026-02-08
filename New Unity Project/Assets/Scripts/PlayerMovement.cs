@@ -43,6 +43,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private PhysicsMaterial2D solidPhysicsMaterial;
     [SerializeField] private PhysicsMaterial2D gasPhysicsMaterial;
 
+    [Header("Physics Tuning")]
+    [SerializeField] private bool useContinuousCollision = true;
+    [SerializeField] private bool useInterpolation = true;
+    [SerializeField] private bool neverSleep = true;
+
     // �������
     private Rigidbody2D rb;
     private Collider2D col;
@@ -143,6 +148,21 @@ public class PlayerMovement : MonoBehaviour
     private void ApplyPhysicsForState(Player.PlayerState state, bool forceApply = false)
     {
         if (rb == null) return;
+
+        if (useContinuousCollision)
+        {
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        }
+
+        if (useInterpolation)
+        {
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        }
+
+        if (neverSleep)
+        {
+            rb.sleepMode = RigidbodySleepMode2D.NeverSleep;
+        }
 
         // Ӧ�ö�Ӧ���������
         if (col != null)
