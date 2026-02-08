@@ -19,6 +19,7 @@ public class AudioController : MonoBehaviour
     private void Start()
     {
         BgmAudio.clip = bgm;
+        BgmAudio.loop=true;
         BgmAudio.Play();
     }
 
