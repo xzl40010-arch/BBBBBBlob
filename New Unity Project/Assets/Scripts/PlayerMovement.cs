@@ -1,44 +1,44 @@
-//2026.1.29:���׭U
-//���A��D�������ƶ�����
+//2026.1.29:移动组件
+//玩家根据状态进行移动控制
 
 //xzl
-//2026.2.3:�޸�������ģ��û���������µ�bug
-//2026.2.3:���ForceUpdatePhysics������ȷ��״̬�л�ʱ������������
-//2026.2.5��������컨�����ײ
+//2026.2.3:修复了气态模式下无重力上升的bug
+//2026.2.3:添加ForceUpdatePhysics确保状态切换时物理属性更新
+//2026.2.5:修复气态天花板碰撞
 
-
-
+//ycy
+//2026.2.10：添加三态移动音效，下落音效；待改气体移动音效，液体掉落音效
 using UnityEngine;
 
 [RequireComponent(typeof(Player))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("�ƶ�����")]
+    [Header("移动参数")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float acceleration = 20f;
     [SerializeField] private float deceleration = 20f;
 
-    [Header("״̬�������")]
+    [Header("状态物理属性")]
     [SerializeField] private float liquidGravity = 15f;
     [SerializeField] private float solidGravity = 20f;
-    [SerializeField] private float gasGravity = -8f;  // ��ֵ��ʾ����Ư��
+    [SerializeField] private float gasGravity = -8f;  // 负值表示向上漂浮
 
-    [Header("��̬��������")]
-    [SerializeField] private float gasFloatSpeed = 3f;        // ����Ư���ٶ�
-    [SerializeField] private float gasMaxFloatSpeed = 5f;     // ���Ư���ٶ�
-    [SerializeField] private bool gasBounceFromCeiling = true; // �Ƿ���컨�巴��
-    [SerializeField] private float gasBounceFactor = 0.5f;    // ����ϵ��
+    [Header("气态特殊参数")]
+    [SerializeField] private float gasFloatSpeed = 3f;        // 基础漂浮速度
+    [SerializeField] private float gasMaxFloatSpeed = 5f;     // 最大漂浮速度
+    [SerializeField] private bool gasBounceFromCeiling = true; // 是否从天花板反弹
+    [SerializeField] private float gasBounceFactor = 0.5f;    // 反弹系数
 
-    [Header("̨���ʵ�")]
+    [Header("台阶攀爬")]
     [SerializeField] private float stepHeight = 0.5f;
     [SerializeField] private float stepCheckDistance = 0.5f;
     [SerializeField] private LayerMask groundLayer;
 
-    [Header("�컨����")]
+    [Header("天花板检测")]
     [SerializeField] private float ceilingCheckDistance = 0.5f;
     [SerializeField] private bool showCeilingDebug = true;
 
-    [Header("�������")]
+    [Header("物理材质")]
     [SerializeField] private PhysicsMaterial2D liquidPhysicsMaterial;
     [SerializeField] private PhysicsMaterial2D solidPhysicsMaterial;
     [SerializeField] private PhysicsMaterial2D gasPhysicsMaterial;
@@ -48,25 +48,35 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool useInterpolation = true;
     [SerializeField] private bool neverSleep = true;
 
-    // �������
+    // 移动音效参数
+    [Header("移动音效设置")]
+    [SerializeField] private float minSpeedForSound = 0.8f;      // 触发移动音效的最小速度
+
+    // 组件引用
     private Rigidbody2D rb;
     private Collider2D col;
     private Player player;
 
-    // �ƶ�״̬
+    // 移动状态
     private float horizontalInput;
     private float targetVelocityX;
     private float currentVelocityX;
     private bool isGrounded;
     private bool isTouchingCeiling;
 
-    // ״̬����
+    // 状态缓存
     private Player.PlayerState lastAppliedState;
     private Player.PlayerState previousState;
 
-    // ʱ�����
+    // 时间控制
     private float gasSwitchTime = 0f;
     private float externalVelocityLockTimer;
+
+    // 移动音效控制
+    private AudioController audioController;
+    private bool wasMoving = false;
+    private bool wasGrounded = false;
+    private float lastVerticalVelocity = 0f;
 
     void Start()
     {
@@ -74,16 +84,23 @@ public class PlayerMovement : MonoBehaviour
         col = GetComponent<Collider2D>();
         player = GetComponent<Player>();
 
+        // 获取AudioController
+        GameObject audioObj = GameObject.FindGameObjectWithTag("Audio");
+        if (audioObj != null)
+        {
+            audioController = audioObj.GetComponent<AudioController>();
+        }
+
         if (player != null)
         {
             lastAppliedState = player.CurrentState;
             previousState = player.CurrentState;
             ApplyPhysicsForState(lastAppliedState, true);
-            Debug.Log($"PlayerMovement��ʼ��: ״̬={lastAppliedState}");
+            Debug.Log($"PlayerMovement初始化: 状态={lastAppliedState}");
         }
         else
         {
-            Debug.LogError("PlayerMovement: �Ҳ���Player���!");
+            Debug.LogError("PlayerMovement: 找不到Player组件!");
         }
     }
 
@@ -91,12 +108,12 @@ public class PlayerMovement : MonoBehaviour
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
 
-        // ���״̬�仯
+        // 检测状态变化
         if (player != null && player.CurrentState != lastAppliedState)
         {
-            Debug.Log($"PlayerMovement��⵽״̬�仯: {lastAppliedState} -> {player.CurrentState}");
+            Debug.Log($"PlayerMovement检测到状态变化: {lastAppliedState} -> {player.CurrentState}");
 
-            // ��¼��̬�л�ʱ��
+            // 记录气态切换时间
             if (player.CurrentState == Player.PlayerState.Gas)
             {
                 gasSwitchTime = Time.time;
@@ -107,10 +124,10 @@ public class PlayerMovement : MonoBehaviour
             lastAppliedState = player.CurrentState;
         }
 
-        // ������Ϣ
+        // 调试信息
         if (Input.GetKeyDown(KeyCode.F2))
         {
-            Debug.Log($"�ƶ����� - ״̬: {player?.CurrentState}, �ٶ�: {rb?.velocity}, ����: {isGrounded}, �컨��: {isTouchingCeiling}");
+            Debug.Log($"移动状态 - 状态: {player?.CurrentState}, 速度: {rb?.velocity}, 接地: {isGrounded}, 天花板: {isTouchingCeiling}");
         }
     }
 
@@ -123,11 +140,14 @@ public class PlayerMovement : MonoBehaviour
             externalVelocityLockTimer -= Time.fixedDeltaTime;
         }
 
-        // ��������컨��
+        // 检测地面和天花板
         CheckGround();
         CheckCeiling();
 
-        // ����״̬�����ƶ�
+        // 处理移动音效（新增）
+        HandleMovementSound();
+
+        // 根据状态处理移动
         switch (player.CurrentState)
         {
             case Player.PlayerState.Liquid:
@@ -141,15 +161,18 @@ public class PlayerMovement : MonoBehaviour
                 break;
         }
 
-        // ȷ������Ч����ȷӦ��
+        // 确保物理效果正确应用
         if (player.CurrentState != lastAppliedState)
         {
             ApplyPhysicsForState(player.CurrentState, true);
             lastAppliedState = player.CurrentState;
         }
+
+        // 记录垂直速度用于落地检测（新增）
+        lastVerticalVelocity = rb.velocity.y;
     }
 
-    // ========== ����״̬Ӧ�� ==========
+    // ========== 状态物理应用 ==========
 
     private void ApplyPhysicsForState(Player.PlayerState state, bool forceApply = false)
     {
@@ -170,7 +193,7 @@ public class PlayerMovement : MonoBehaviour
             rb.sleepMode = RigidbodySleepMode2D.NeverSleep;
         }
 
-        // Ӧ�ö�Ӧ���������
+        // 应用对应的物理材质
         if (col != null)
         {
             switch (state)
@@ -192,46 +215,134 @@ public class PlayerMovement : MonoBehaviour
             case Player.PlayerState.Liquid:
                 rb.gravityScale = liquidGravity;
                 rb.mass = 1f;
-                if (forceApply) Debug.Log($"Ӧ��Һ������: ����={liquidGravity}");
+                if (forceApply) Debug.Log($"应用液态物理: 重力={liquidGravity}");
                 break;
 
             case Player.PlayerState.Solid:
                 rb.gravityScale = solidGravity;
-                rb.mass = 2f; // ����
-                if (forceApply) Debug.Log($"Ӧ�ù�������: ����={solidGravity}, ����=2");
+                rb.mass = 2f; // 较重
+                if (forceApply) Debug.Log($"应用固态物理: 重力={solidGravity}, 质量=2");
                 break;
 
             case Player.PlayerState.Gas:
                 rb.gravityScale = gasGravity;
-                rb.mass = 0.5f; // ����
-                if (forceApply) Debug.Log($"Ӧ����������: ����={gasGravity}, ����=0.5");
+                rb.mass = 0.5f; // 较轻
+                if (forceApply) Debug.Log($"应用气态物理: 重力={gasGravity}, 质量=0.5");
 
-                // �л�����̬ʱ�����ʼ�ϸ��ٶ�
+                // 切换为气态时，给予初始上升速度
                 if (forceApply)
                 {
                     Vector2 velocity = rb.velocity;
                     velocity.y = Mathf.Max(gasFloatSpeed, velocity.y);
                     rb.velocity = velocity;
-                    if (showCeilingDebug) Debug.Log($"��̬�л�: �����ϸ��ٶ� {velocity.y}");
+                    if (showCeilingDebug) Debug.Log($"气态切换: 设置上升速度 {velocity.y}");
                 }
                 break;
         }
-
     }
 
-    // ========== ��̬���е��ƶ��߼� ==========
+    // ========== 移动音效处理==========
+
+    private void HandleMovementSound()
+    {
+        if (audioController == null) return;
+        if (player == null) return;
+
+        // 检查是否在移动
+        bool isMoving = CheckIfMoving();
+        bool isGroundedNow = isGrounded && player.CurrentState != Player.PlayerState.Gas;
+        
+        // 根据状态选择对应的移动音效
+        AudioClip moveClip;
+        if(player.CurrentState == Player.PlayerState.Gas) 
+            moveClip=audioController.gasMoveClip;
+        else if(player.CurrentState == Player.PlayerState.Solid) 
+            moveClip=audioController.solidMoveClip;
+        else
+            moveClip=audioController.liquidMoveClip;
+        
+        if (moveClip == null) return;
+        
+        // 状态变化：开始移动
+        if (isMoving && !wasMoving)
+        {
+            // 使用PlayMoveSound而不是PlaySfx，避免音效叠加
+            audioController.PlayMoveSound(moveClip, true);
+        }
+        // 状态变化：停止移动
+        else if (!isMoving && wasMoving)
+        {
+            audioController.StopMoveSound();
+        }
+        // 持续移动但音效已结束
+        else if (isMoving && !audioController.IsMoveSoundPlaying())
+        {
+            // 音效播放完后，重新开始（实现循环效果）
+            audioController.PlayMoveSound(moveClip, true);
+        }
+        
+        // 地面状态变化（仅对固态和流动态）- 落地音效
+        if (player.CurrentState != Player.PlayerState.Gas)
+        {
+            if (isGroundedNow && !wasGrounded)
+            {
+                // 计算下落速度
+                float fallSpeed = Mathf.Abs(lastVerticalVelocity);
+                if (fallSpeed > 3f) // 触发落地音效的最小下落速度
+                {
+                    // 落地音效使用普通的PlaySfx
+                    if(player.CurrentState == Player.PlayerState.Solid)
+                        audioController.PlaySfx(audioController.solidFallClip);
+                    // else
+                       // audioController.PlaySfx(audioController.liquidMoveClip);
+                       // /////待改液体下落音效
+                }
+            }
+        }
+        
+        // 更新状态
+        wasMoving = isMoving;
+        wasGrounded = isGroundedNow;
+    }
+
+    private bool CheckIfMoving()
+    {
+        if (rb == null) return false;
+        
+        float currentSpeed = rb.velocity.magnitude;
+        bool hasHorizontalInput = Mathf.Abs(horizontalInput) > 0.1f;
+        
+        // 不同状态有不同的移动判断标准
+        switch (player.CurrentState)
+        {
+            case Player.PlayerState.Solid:
+                return currentSpeed > minSpeedForSound && hasHorizontalInput;
+                
+            case Player.PlayerState.Liquid:
+                return currentSpeed > minSpeedForSound * 0.7f && hasHorizontalInput;
+                
+            case Player.PlayerState.Gas:
+                return currentSpeed > minSpeedForSound * 0.5f;
+                
+            default:
+                return false;
+        }
+    }
+
+
+    // ========== 状态特定的移动逻辑 ==========
 
     private void HandleLiquidMovement()
     {
         SmoothHorizontalMovement();
 
-        // Һ������������̨���ʵ�
+        // 液态可以尝试攀爬台阶
         if (isGrounded && Mathf.Abs(horizontalInput) > 0.1f)
         {
             TryClimbStep();
         }
 
-        // Һ��ճ�ԣ����ʱ���ٵ���
+        // 液态粘性，落地时减速
         if (isGrounded && Mathf.Abs(rb.velocity.y) > 0.1f)
         {
             rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.8f);
@@ -242,7 +353,7 @@ public class PlayerMovement : MonoBehaviour
     {
         SmoothHorizontalMovement();
 
-        // ������ԣ����ٸ���
+        // 固态惯性，减速更慢
         if (externalVelocityLockTimer <= 0f && Mathf.Abs(horizontalInput) < 0.1f)
         {
             Vector2 velocity = rb.velocity;
@@ -255,21 +366,20 @@ public class PlayerMovement : MonoBehaviour
     {
         SmoothHorizontalMovement();
 
-        // �����컨����ײ
+        // 处理天花板碰撞
         if (isTouchingCeiling)
         {
-            // �����컨��ʱ����
             Vector2 velocity = rb.velocity;
 
             if (gasBounceFromCeiling)
             {
-                // ����Ч��
+                // 反弹效果
                 velocity.y = -Mathf.Abs(velocity.y) * gasBounceFactor;
-                if (showCeilingDebug) Debug.Log($"�컨�巴��: �ٶ� {velocity.y}");
+                if (showCeilingDebug) Debug.Log($"天花板反弹: 速度 {velocity.y}");
             }
             else
             {
-                // ֹͣ�ϸ���������΢����
+                // 停止上升并轻微下降
                 velocity.y = Mathf.Min(velocity.y, -0.5f);
             }
 
@@ -277,20 +387,20 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            // ����Ư���߼�
+            // 漂浮逻辑
             Vector2 velocity = rb.velocity;
 
-            // ȷ����С�ϸ��ٶȣ����л�ʱ��ǿ��
+            // 确保最小上升速度，切换时增强
             float timeSinceSwitch = Time.time - gasSwitchTime;
             float currentFloatSpeed = gasFloatSpeed;
 
-            // ���л�ʱ�����������
+            // 切换时给予更强的上升力
             if (timeSinceSwitch < 1f)
             {
                 currentFloatSpeed = Mathf.Lerp(gasFloatSpeed * 1.5f, gasFloatSpeed, timeSinceSwitch);
             }
 
-            // �����ϸ�
+            // 控制上升
             if (velocity.y < gasMaxFloatSpeed)
             {
                 velocity.y = Mathf.Min(velocity.y + currentFloatSpeed * Time.fixedDeltaTime, gasMaxFloatSpeed);
@@ -299,11 +409,11 @@ public class PlayerMovement : MonoBehaviour
             rb.velocity = velocity;
         }
 
-        // ���岻��ӵ�
+        // 气态不接触地面
         player.SetGrounded(false);
     }
 
-    // ========== ˮƽ�ƶ����� ==========
+    // ========== 水平移动处理 ==========
 
     private void SmoothHorizontalMovement()
     {
@@ -321,13 +431,13 @@ public class PlayerMovement : MonoBehaviour
         rb.velocity = velocity;
     }
 
-    // ========== ��ײ��� ==========
+    // ========== 碰撞检测 ==========
 
     private void CheckGround()
     {
         if (col == null || player == null) return;
 
-        // ���岻�������
+        // 气态不检测地面
         if (player.CurrentState == Player.PlayerState.Gas)
         {
             isGrounded = false;
@@ -338,8 +448,7 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rayStart = transform.position;
         float rayLength = col.bounds.extents.y + 0.1f;
 
-        // �����������ȷ�����׼ȷ
-        // �޸���ʹ��Vector2.left��Vector2.right���Vector3
+        // 多方向射线确保检测准确
         RaycastHit2D hitCenter = Physics2D.Raycast(rayStart, Vector2.down, rayLength, groundLayer);
         RaycastHit2D hitLeft = Physics2D.Raycast(rayStart + (Vector2.left * col.bounds.extents.x * 0.7f),
                                                  Vector2.down, rayLength, groundLayer);
@@ -355,7 +464,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (col == null || player == null) return;
 
-        // ֻ����̬��Ҫ����컨��
+        // 只有气态需要检测天花板
         if (player.CurrentState != Player.PlayerState.Gas)
         {
             isTouchingCeiling = false;
@@ -365,8 +474,7 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rayStart = transform.position;
         float rayLength = col.bounds.extents.y + ceilingCheckDistance;
 
-        // ����������߼���컨��
-        // �޸���ʹ��Vector2.left��Vector2.right���Vector3
+        // 多方向检测天花板
         RaycastHit2D hitCenter = Physics2D.Raycast(rayStart, Vector2.up, rayLength, groundLayer);
         RaycastHit2D hitLeft = Physics2D.Raycast(rayStart + (Vector2.left * col.bounds.extents.x * 0.7f),
                                                  Vector2.up, rayLength, groundLayer);
@@ -375,14 +483,14 @@ public class PlayerMovement : MonoBehaviour
 
         isTouchingCeiling = hitCenter.collider != null || hitLeft.collider != null || hitRight.collider != null;
 
-        // �������
+        // 调试输出
         if (showCeilingDebug && isTouchingCeiling && Time.frameCount % 30 == 0)
         {
-            Debug.Log($"�����컨��: �ٶ�Y={rb.velocity.y:F2}");
+            Debug.Log($"气态碰天花板: 速度Y={rb.velocity.y:F2}");
         }
     }
 
-    // ========== �������� ==========
+    // ========== 辅助功能 ==========
 
     private void TryClimbStep()
     {
@@ -401,15 +509,15 @@ public class PlayerMovement : MonoBehaviour
             if (heightDifference > 0 && heightDifference <= stepHeight)
             {
                 Vector3 newPosition = transform.position;
-                newPosition.y = stepTop + col.bounds.extents.y + 0.05f; // ��΢��һ����⿨ס
+                newPosition.y = stepTop + col.bounds.extents.y + 0.05f; // 加微小偏移防止卡住
                 rb.MovePosition(newPosition);
 
-                Debug.Log($"�ʵ�̨�׳ɹ�: �߶Ȳ�={heightDifference:F2}");
+                Debug.Log($"攀爬台阶成功: 高度差={heightDifference:F2}");
             }
         }
     }
 
-    // ========== �������� ==========
+    // ========== 公共接口 ==========
 
     public float GetHorizontalInput()
     {
@@ -420,7 +528,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (player != null)
         {
-            Debug.Log($"ǿ�Ƹ�������״̬: {player.CurrentState}");
+            Debug.Log($"强制更新物理状态: {player.CurrentState}");
             ApplyPhysicsForState(player.CurrentState, true);
             lastAppliedState = player.CurrentState;
         }
@@ -431,19 +539,24 @@ public class PlayerMovement : MonoBehaviour
         return isTouchingCeiling;
     }
 
-    // ========== ���Կ��ӻ� ==========
+    public void LockExternalVelocity(float duration)
+    {
+        externalVelocityLockTimer = Mathf.Max(externalVelocityLockTimer, duration);
+    }
+
+    // ========== 调试可视化 ==========
 
     void OnDrawGizmosSelected()
     {
         if (col == null) return;
 
-        // ��������ӻ�
+        // 地面检测可视化
         Gizmos.color = isGrounded ? Color.green : Color.red;
         Vector3 groundStart = transform.position;
         Vector3 groundEnd = groundStart + Vector3.down * (col.bounds.extents.y + 0.1f);
         Gizmos.DrawLine(groundStart, groundEnd);
 
-        // �컨������ӻ�������̬��
+        // 天花板检测可视化（仅气态）
         if (player != null && player.CurrentState == Player.PlayerState.Gas)
         {
             Gizmos.color = isTouchingCeiling ? Color.yellow : Color.cyan;
@@ -452,7 +565,7 @@ public class PlayerMovement : MonoBehaviour
             Gizmos.DrawLine(ceilingStart, ceilingEnd);
         }
 
-        // ̨�׼����ӻ�
+        // 台阶检测可视化
         if (Mathf.Abs(horizontalInput) > 0.1f && player != null && player.CurrentState == Player.PlayerState.Liquid)
         {
             Gizmos.color = Color.blue;
@@ -461,32 +574,32 @@ public class PlayerMovement : MonoBehaviour
             Gizmos.DrawLine(stepCheckStart, stepCheckEnd);
         }
 
-        // ��ʾ��ǰ״̬
+        // 显示当前状态
 #if UNITY_EDITOR
         GUIStyle style = new GUIStyle();
         style.normal.textColor = Color.white;
         style.fontSize = 12;
         UnityEditor.Handles.Label(transform.position + Vector3.up * 1.5f, 
-                                 $"״̬: {player?.CurrentState}\n����: {isGrounded}\n�컨��: {isTouchingCeiling}", style);
+                                 $"状态: {player?.CurrentState}\n接地: {isGrounded}\n天花板: {isTouchingCeiling}", style);
 #endif
     }
 
-    // ========== ��ײ�¼� ==========
+    // ========== 碰撞事件 ==========
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // ������ײ����
+        // 气态碰撞处理
         if (player != null && player.CurrentState == Player.PlayerState.Gas)
         {
-            // ��̬��ײ���⴦��
+            // 气态碰撞特殊处理
             if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
             {
-                // ����Ƿ���Ϸ���ײ���컨�壩
+                // 检测是否是上方碰撞（天花板）
                 foreach (ContactPoint2D contact in collision.contacts)
                 {
-                    if (contact.normal.y < -0.5f) // ���·���ײ���������˵���Ϸ���
+                    if (contact.normal.y < -0.5f) // 向下法线表示碰到上方
                     {
-                        Debug.Log($"��̬�����컨��: ����={contact.normal}");
+                        Debug.Log($"气态碰到天花板: 法线={contact.normal}");
                         isTouchingCeiling = true;
                     }
                 }
@@ -496,15 +609,10 @@ public class PlayerMovement : MonoBehaviour
 
     void OnCollisionExit2D(Collision2D collision)
     {
-        // �뿪��ײʱ�����컨��״̬
+        // 离开碰撞时重置天花板状态
         if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
         {
             isTouchingCeiling = false;
         }
-    }
-
-    public void LockExternalVelocity(float duration)
-    {
-        externalVelocityLockTimer = Mathf.Max(externalVelocityLockTimer, duration);
     }
 }

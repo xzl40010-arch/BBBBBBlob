@@ -1,6 +1,9 @@
 //郑佳鑫
 //2026.2.7 第一次修改：弹簧板脚本 - 处理垂直反弹
 // 2026.2.9 第二次修改：增加水平反弹选项，调整反弹方向计算
+
+//ycy
+//2026.2.10 添加弹簧音效
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
@@ -28,10 +31,18 @@ public class SpringBoard : MonoBehaviour
     private float bounceLockTimer;
     private float bounceSpeed;
     private float bounceSign;
+    private AudioController audioController;
 
     private void Awake()
     {
         boardCollider = GetComponent<Collider2D>();
+
+        GameObject audioObj = GameObject.FindGameObjectWithTag("Audio");
+        if (audioObj != null)
+        {
+            audioController = audioObj.GetComponent<AudioController>();
+        }
+
         if (forceSolidCollider && boardCollider != null && boardCollider.isTrigger)
         {
             boardCollider.isTrigger = false;
@@ -141,6 +152,11 @@ public class SpringBoard : MonoBehaviour
         rb.velocity = outVelocity;
         rb.angularVelocity = 0f;
 
+        // 播放弹簧音效
+        if (audioController != null)
+        {
+            audioController.PlaySfx(audioController.springClip);
+        }
         lastBouncedRb = rb;
         bounceLockTimer = Mathf.Max(bounceLockTimer, lockHorizontalTime);
         bounceSpeed = outVelocity.magnitude;

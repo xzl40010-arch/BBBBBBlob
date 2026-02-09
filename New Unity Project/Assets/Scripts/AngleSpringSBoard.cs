@@ -1,5 +1,8 @@
 //郑佳鑫
 //2026.2.7 第一次修改：倾斜弹簧板脚本 - 处理斜向反弹
+
+//ycy
+//2026.2.10 添加弹簧音效
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
@@ -27,9 +30,18 @@ public class AngleSpringSBoard : MonoBehaviour
 
     private int lastBounceFrame = -999;
 
+    private AudioController audioController;
+
     private void Awake()
     {
         boardCollider = GetComponent<Collider2D>();
+
+        GameObject audioObj = GameObject.FindGameObjectWithTag("Audio");
+        if (audioObj != null)
+        {
+            audioController = audioObj.GetComponent<AudioController>();
+        }
+
         if (forceSolidCollider && boardCollider != null && boardCollider.isTrigger)
         {
             boardCollider.isTrigger = false;
@@ -44,6 +56,12 @@ public class AngleSpringSBoard : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         TryHandleBounce(collision);
+
+        //播放弹簧音效
+        if (audioController != null)
+        {
+            audioController.PlaySfx(audioController.springClip);
+        }
     }
 
     private void OnCollisionStay2D(Collision2D collision)
