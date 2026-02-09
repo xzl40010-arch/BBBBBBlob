@@ -3,6 +3,7 @@
 //2026.1.28：添加玩家状态机，玩家只能完成流动态→气化态和流动态→凝固态两种操作，玩家操作的形态切换之间存在0.3s冷却
 // 2026.2.2：增加调试日志，显示玩家状态切换情况
 //2026.2.5：修复了状态切换时物理不同步的问题，增加记录存档功能
+//2026.2.9：添加了玩家持有球令牌的销毁逻辑，修复了玩家重置位置时未重置状态的问题
 //许兆璘
 //2026.1.29：添加了移动接口，修改玩家初始状态为Liquid
 
@@ -211,6 +212,12 @@ public class Player : MonoBehaviour
         if (audioController != null)
             audioController.PlaySfx(audioController.thronKillClip);
 
+        PlayerBallHolder ballHolder = GetComponentInChildren<PlayerBallHolder>();
+        if (ballHolder != null)
+        {
+            ballHolder.ClearHeldBallWithoutUse();
+        }
+
         Vector3 respawnPos;
         if (ArchiveManager.TryGetLatestPosition(out respawnPos))
         {
@@ -252,6 +259,12 @@ public class Player : MonoBehaviour
 
         SendMessage("OnPlayerStateChanged", currentState, SendMessageOptions.DontRequireReceiver);
 
+        PlayerBallHolder holder = GetComponentInChildren<PlayerBallHolder>();
+        if (holder != null)
+        {
+            holder.HandleStateChanged(currentState);
+        }
+
         if (playerMovement != null)
         {
             playerMovement.ForceUpdatePhysics();
@@ -266,6 +279,12 @@ public class Player : MonoBehaviour
         currentState = newState;
         ApplyFormVisibility(currentState);
         SendMessage("OnPlayerStateChanged", currentState, SendMessageOptions.DontRequireReceiver);
+
+        PlayerBallHolder holder = GetComponentInChildren<PlayerBallHolder>();
+        if (holder != null)
+        {
+            holder.HandleStateChanged(currentState);
+        }
 
         if (playerMovement != null)
         {
