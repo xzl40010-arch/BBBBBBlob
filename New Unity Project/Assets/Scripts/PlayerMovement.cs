@@ -66,6 +66,7 @@ public class PlayerMovement : MonoBehaviour
 
     // ʱ�����
     private float gasSwitchTime = 0f;
+    private float externalVelocityLockTimer;
 
     void Start()
     {
@@ -116,6 +117,11 @@ public class PlayerMovement : MonoBehaviour
     void FixedUpdate()
     {
         if (player == null || rb == null) return;
+
+        if (externalVelocityLockTimer > 0f)
+        {
+            externalVelocityLockTimer -= Time.fixedDeltaTime;
+        }
 
         // ��������컨��
         CheckGround();
@@ -237,7 +243,7 @@ public class PlayerMovement : MonoBehaviour
         SmoothHorizontalMovement();
 
         // ������ԣ����ٸ���
-        if (Mathf.Abs(horizontalInput) < 0.1f)
+        if (externalVelocityLockTimer <= 0f && Mathf.Abs(horizontalInput) < 0.1f)
         {
             Vector2 velocity = rb.velocity;
             velocity.x = Mathf.Lerp(velocity.x, 0, deceleration * 0.5f * Time.fixedDeltaTime);
@@ -301,6 +307,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void SmoothHorizontalMovement()
     {
+        if (externalVelocityLockTimer > 0f)
+        {
+            return;
+        }
+
         targetVelocityX = horizontalInput * moveSpeed;
         float smoothRate = (Mathf.Abs(horizontalInput) > 0.1f) ? acceleration : deceleration;
         currentVelocityX = Mathf.Lerp(currentVelocityX, targetVelocityX, smoothRate * Time.fixedDeltaTime);
@@ -490,5 +501,10 @@ public class PlayerMovement : MonoBehaviour
         {
             isTouchingCeiling = false;
         }
+    }
+
+    public void LockExternalVelocity(float duration)
+    {
+        externalVelocityLockTimer = Mathf.Max(externalVelocityLockTimer, duration);
     }
 }
