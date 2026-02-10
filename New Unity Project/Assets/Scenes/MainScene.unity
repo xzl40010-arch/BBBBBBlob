@@ -5125,8 +5125,10 @@ MonoBehaviour:
   BgmAudio: {fileID: 1880070807}
   SfxAudio: {fileID: 500404415}
   MoveAudio: {fileID: 1051067864}
+  fadeInTime: 0.2
+  fadeOutTime: 0.3
   bgm: {fileID: 8300000, guid: bc856868aa77fc74a9f7268cbbb468f0, type: 3}
-  clickClip: {fileID: 0}
+  clickClip: {fileID: 8300000, guid: 493da16be40cf7e439d56eaab6562723, type: 3}
   sizzleClip: {fileID: 8300000, guid: 23fb69c86d6703243b057f3fd269df0b, type: 3}
   fizzClip: {fileID: 8300000, guid: 407aa753c78bde7428c407eea40c8642, type: 3}
   toGasClip: {fileID: 8300000, guid: d2a738455073aa24e8406af7f484fd57, type: 3}
@@ -5134,9 +5136,11 @@ MonoBehaviour:
   solidMoveClip: {fileID: 8300000, guid: 552dedfc3a344db43a171f7e34efa1b3, type: 3}
   solidFallClip: {fileID: 8300000, guid: 98574c795bed17a40b967853f2dd1c55, type: 3}
   liquidMoveClip: {fileID: 8300000, guid: 7b857ca0d2b0f844ab9b9a8a8e1e153f, type: 3}
-  gasMoveClip: {fileID: 8300000, guid: d2a738455073aa24e8406af7f484fd57, type: 3}
+  liquidFallClip: {fileID: 8300000, guid: 1b6daa552052b76458bb2e300309d07c, type: 3}
+  gasMoveClip: {fileID: 8300000, guid: ee31a74cc311d844b9bcbc45924b6e37, type: 3}
   springClip: {fileID: 8300000, guid: d8b57ed216d8bf4469161c8aefa3394d, type: 3}
   thronKillClip: {fileID: 8300000, guid: 0c94e34cc9eb2bf41a3cd59307714899, type: 3}
+  wallCrackClip: {fileID: 8300000, guid: ddc7a481c4b1145408ba380dc57288fe, type: 3}
   ballPickClip: {fileID: 8300000, guid: e4285f4795e72f34ca06a85c2d5f1546, type: 3}
   portalClip: {fileID: 8300000, guid: 5551dff3908d6e549bdeb4457cf17e86, type: 3}
   savepointClip: {fileID: 8300000, guid: f35ae96896c73234e89741be4599ac96, type: 3}

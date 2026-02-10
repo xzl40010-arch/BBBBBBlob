@@ -7,7 +7,7 @@
 //2026.2.5:修复气态天花板碰撞
 
 //ycy
-//2026.2.10：添加三态移动音效，下落音效；待改气体移动音效，液体掉落音效
+//2026.2.10：添加三态移动音效，下落音效；待改气体移动音效
 using UnityEngine;
 
 [RequireComponent(typeof(Player))]
@@ -293,9 +293,8 @@ public class PlayerMovement : MonoBehaviour
                     // 落地音效使用普通的PlaySfx
                     if(player.CurrentState == Player.PlayerState.Solid)
                         audioController.PlaySfx(audioController.solidFallClip);
-                    // else
-                       // audioController.PlaySfx(audioController.liquidMoveClip);
-                       // /////待改液体下落音效
+                    else
+                        audioController.PlaySfx(audioController.liquidFallClip);
                 }
             }
         }
