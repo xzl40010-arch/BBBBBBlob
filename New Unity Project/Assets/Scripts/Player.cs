@@ -4,8 +4,10 @@
 // 2026.2.2：增加调试日志，显示玩家状态切换情况
 //2026.2.5：修复了状态切换时物理不同步的问题，增加记录存档功能
 //2026.2.9：添加了玩家持有球令牌的销毁逻辑，修复了玩家重置位置时未重置状态的问题
+//2026.2.10：添加下落速度检测，永久记录从3单位高度下落的速度，用于平台破碎判定
+//2026.2.11：添加R键快速回到存档点（不重置房间），T键自杀（重置房间）
+
 //许兆璘
-//2026.1.29：添加了移动接口，修改玩家初始状态为Liquid
 
 //阳成垚
 //2026.1.30：实现尖刺、状态转换的音效播放
@@ -17,6 +19,7 @@
 
 //文振一
 //2026.2.10 添加触发角色死亡特效（反馈）
+
 
 using UnityEngine;
 
@@ -54,6 +57,16 @@ public class Player : MonoBehaviour
     [Header("存档")]
     [SerializeField] private bool clearArchiveOnStart = true;
 
+    [Header("下落速度测量")]
+    [SerializeField] private float fallHeightForMeasure = 3f;
+    [SerializeField] private bool logFallSpeed = false;
+    private float measuredFallSpeed = 5f;
+    private float lastGroundedY = 0f;
+    private bool hasGroundedY = false;
+    public float MeasuredFallSpeed => measuredFallSpeed;
+
+    private const string FALL_SPEED_KEY = "PlayerMeasuredFallSpeed";
+
     private Vector3 defaultSpawn;
     private Rigidbody2D rb;
     private AudioController audioController;
@@ -81,6 +94,16 @@ public class Player : MonoBehaviour
         defaultSpawn = (spawnPoint != null) ? spawnPoint.position : transform.position;
 
         ApplyFormVisibility(currentState);
+
+        // 从 PlayerPrefs 读取已保存的下落速度
+        if (PlayerPrefs.HasKey(FALL_SPEED_KEY))
+        {
+            measuredFallSpeed = PlayerPrefs.GetFloat(FALL_SPEED_KEY);
+            if (logFallSpeed)
+            {
+                Debug.Log($"[Player] Loaded saved fall speed: {measuredFallSpeed}");
+            }
+        }
     }
 
     void Start()
@@ -105,10 +128,48 @@ public class Player : MonoBehaviour
             TrySwitchToSolid();
         }
 
+        // R键：回到最新存档点（不重置房间内容）
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            ReturnToArchive();
+        }
+
+        // T键：自杀（重置房间内容）
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            Die();
+        }
+
         // 可选：按空格刷新默认出生点（你原来逻辑是断的，这里补成可用版）
         if (Input.GetKeyDown(KeyCode.Space))
         {
             defaultSpawn = (spawnPoint != null) ? spawnPoint.position : transform.position;
+        }
+
+        // 下落速度测量逻辑
+        if (IsGrounded)
+        {
+            if (hasGroundedY)
+            {
+                float deltaY = lastGroundedY - transform.position.y;
+                if (deltaY >= fallHeightForMeasure)
+                {
+                    measuredFallSpeed = -rb.velocity.y;
+                    PlayerPrefs.SetFloat(FALL_SPEED_KEY, measuredFallSpeed);
+                    PlayerPrefs.Save();
+                    if (logFallSpeed)
+                    {
+                        Debug.Log($"[Player] Measured and saved fall speed: {measuredFallSpeed}");
+                    }
+                }
+            }
+
+            lastGroundedY = transform.position.y;
+            hasGroundedY = true;
+        }
+        else
+        {
+            hasGroundedY = false;
         }
     }
 
@@ -220,6 +281,9 @@ public class Player : MonoBehaviour
             audioController.PlaySfx(audioController.thronKillClip);
 
         PlayDeathFeedback();//死亡特效
+
+        // 重置房间内容（恢复被破坏的平台等）
+        RoomResetManager.ResetRoom();
 
         PlayerBallHolder ballHolder = GetComponentInChildren<PlayerBallHolder>();
         if (ballHolder != null)
@@ -336,7 +400,7 @@ public class Player : MonoBehaviour
     private void PlayDeathFeedback()
     {
         if (hurtFlash != null)
-            hurtFlash.FlashWhite(0.05f);
+            hurtFlash.FlashWhite(flashSeconds);
 
         if (hurtBurstVfx != null)
         {
@@ -344,6 +408,7 @@ public class Player : MonoBehaviour
             hurtBurstVfx.Play(true);
         }
     }
+
     // ========== 其他 ==========
 
     public bool IsGrounded { get; private set; }
@@ -351,5 +416,29 @@ public class Player : MonoBehaviour
     public void SetGrounded(bool grounded)
     {
         IsGrounded = grounded;
+    }
+
+    // ========== 存档相关 ==========
+
+    private void ReturnToArchive()
+    {
+        Vector3 archivePos;
+        if (ArchiveManager.TryGetLatestPosition(out archivePos))
+        {
+            transform.position = archivePos;
+            rb.velocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+
+            Debug.Log("[Player] Returned to archive position: " + archivePos);
+        }
+        else
+        {
+            // 没有存档时，回到默认出生点
+            transform.position = (spawnPoint != null) ? spawnPoint.position : defaultSpawn;
+            rb.velocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            
+            Debug.Log("[Player] No archive found, returned to default spawn: " + transform.position);
+        }
     }
 }
