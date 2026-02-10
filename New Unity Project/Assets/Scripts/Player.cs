@@ -15,6 +15,8 @@
 //2026.2.3:修复状态切换物理不同步的问题
 //2026.2.5:彻底修复了三态变化的问题
 
+//文振一
+//2026.2.10 添加触发角色死亡特效（反馈）
 
 using UnityEngine;
 
@@ -40,6 +42,11 @@ public class Player : MonoBehaviour
     [SerializeField] private ParticleSystem solidSwitchVfx;
     [SerializeField] private ParticleSystem liquidSwitchVfx;
     [SerializeField] private ParticleSystem gasSwitchVfx;
+
+    [Header("死亡反馈")]
+    [SerializeField] private HurtFlash hurtFlash;
+    [SerializeField] private ParticleSystem hurtBurstVfx;
+    [SerializeField] private float flashSeconds = 0.05f;
 
     [Header("出生点")]
     [SerializeField] private Transform spawnPoint;
@@ -212,6 +219,8 @@ public class Player : MonoBehaviour
         if (audioController != null)
             audioController.PlaySfx(audioController.thronKillClip);
 
+        PlayDeathFeedback();//死亡特效
+
         PlayerBallHolder ballHolder = GetComponentInChildren<PlayerBallHolder>();
         if (ballHolder != null)
         {
@@ -227,7 +236,7 @@ public class Player : MonoBehaviour
         {
             transform.position = (spawnPoint != null) ? spawnPoint.position : defaultSpawn;
         }
-
+    
         ForceSetState(PlayerState.Liquid);
 
         if (rb != null)
@@ -324,6 +333,17 @@ public class Player : MonoBehaviour
         ps.Play(true);
     }
 
+    private void PlayDeathFeedback()
+    {
+        if (hurtFlash != null)
+            hurtFlash.FlashWhite(0.05f);
+
+        if (hurtBurstVfx != null)
+        {
+            hurtBurstVfx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            hurtBurstVfx.Play(true);
+        }
+    }
     // ========== 其他 ==========
 
     public bool IsGrounded { get; private set; }
