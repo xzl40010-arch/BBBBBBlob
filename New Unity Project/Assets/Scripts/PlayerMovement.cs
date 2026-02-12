@@ -8,9 +8,11 @@
 
 //ycy
 //2026.2.10：添加三态移动音效，下落音效；待改气体移动音效
+//2026.2.12：优化移动音效性能，修复卡顿问题
 
 //郑佳鑫
 //2026.2.10：添加外部速度锁定功能，供其他脚本调用（如跳跃脚本）以暂时禁止水平输入影响速度
+
 using UnityEngine;
 
 [RequireComponent(typeof(Player))]
@@ -51,6 +53,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool useInterpolation = true;
     [SerializeField] private bool neverSleep = true;
 
+    // ==========  移动音效参数 ==========
+    [Header("移动音效设置")]
+    [SerializeField] private float minSpeedForSound = 0.8f;      // 触发移动音效的最小速度
+    [SerializeField] private float moveSoundCheckInterval = 0.1f; // 音效检测间隔（优化性能）
+
     // 组件引用
     private Rigidbody2D rb;
     private Collider2D col;
@@ -71,11 +78,41 @@ public class PlayerMovement : MonoBehaviour
     private float gasSwitchTime = 0f;
     private float externalVelocityLockTimer;
 
+    // ==========  音效相关变量 ==========
+    private AudioController audioController;
+    private bool wasMoving = false;
+    private bool wasGrounded = false;
+    private float lastVerticalVelocity = 0f;
+    private float moveSoundCheckTimer = 0f;
+    
+    // 缓存音效文件
+    private AudioClip cachedSolidMoveClip;
+    private AudioClip cachedLiquidMoveClip;
+    private AudioClip cachedGasMoveClip;
+    private AudioClip cachedSolidFallClip;
+    private AudioClip cachedLiquidFallClip;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         player = GetComponent<Player>();
+
+        // ==========  获取AudioController并缓存音效 ==========
+        GameObject audioObj = GameObject.FindGameObjectWithTag("Audio");
+        if (audioObj != null)
+        {
+            audioController = audioObj.GetComponent<AudioController>();
+            
+            if (audioController != null)
+            {
+                cachedSolidMoveClip = audioController.solidMoveClip;
+                cachedLiquidMoveClip = audioController.liquidMoveClip;
+                cachedGasMoveClip = audioController.gasMoveClip;
+                cachedSolidFallClip = audioController.solidFallClip;
+                cachedLiquidFallClip = audioController.liquidFallClip;
+            }
+        }
 
         if (player != null)
         {
@@ -105,6 +142,21 @@ public class PlayerMovement : MonoBehaviour
                 gasSwitchTime = Time.time;
             }
 
+                // ========== 形态切换时，强制更新移动音效 ==========
+            if (audioController != null)
+                {
+                    // 获取新形态的音效
+                    AudioClip newMoveClip = GetMoveClipForCurrentState();
+                    if (newMoveClip != null)
+                    {   
+                        // 再播放新音效
+                        audioController.StopMoveSoundImmediate();
+                        audioController.PlayMoveSound(newMoveClip, true);
+                        Debug.Log($"形态切换，强制更新移动音效: {lastAppliedState} -> {player.CurrentState}");
+                    }
+                }
+                // ====================================================
+
             ApplyPhysicsForState(player.CurrentState, true);
             previousState = lastAppliedState;
             lastAppliedState = player.CurrentState;
@@ -130,6 +182,14 @@ public class PlayerMovement : MonoBehaviour
         CheckGround();
         CheckCeiling();
 
+        // ==========  间隔检测音效，避免每帧调用 ==========
+        moveSoundCheckTimer += Time.fixedDeltaTime;
+        if (moveSoundCheckTimer >= moveSoundCheckInterval)
+        {
+            HandleMovementSound();
+            moveSoundCheckTimer = 0f;
+        }
+
         // 根据状态处理移动
         switch (player.CurrentState)
         {
@@ -150,6 +210,9 @@ public class PlayerMovement : MonoBehaviour
             ApplyPhysicsForState(player.CurrentState, true);
             lastAppliedState = player.CurrentState;
         }
+
+        // ========== 记录垂直速度用于落地检测 ==========
+        lastVerticalVelocity = rb.velocity.y;
     }
 
     // ========== 状态物理应用 ==========
@@ -219,7 +282,114 @@ public class PlayerMovement : MonoBehaviour
                 }
                 break;
         }
+    }
 
+    // ==========  移动音效处理 ==========
+
+    private void HandleMovementSound()
+    {
+        if (audioController == null) return;
+        if (player == null) return;
+
+        // 检查是否在移动
+        bool isMoving = CheckIfMoving();
+        bool isGroundedNow = isGrounded && player.CurrentState != Player.PlayerState.Gas;
+        
+        // 根据状态选择对应的移动音效（使用缓存）
+        AudioClip moveClip = null;
+        AudioClip fallClip = null;
+        
+        switch (player.CurrentState)
+        {
+            case Player.PlayerState.Gas:
+                moveClip = cachedGasMoveClip;
+                break;
+            case Player.PlayerState.Solid:
+                moveClip = cachedSolidMoveClip;
+                fallClip = cachedSolidFallClip;
+                break;
+            case Player.PlayerState.Liquid:
+                moveClip = cachedLiquidMoveClip;
+                fallClip = cachedLiquidFallClip;
+                break;
+        }
+        
+        if (moveClip == null) return;
+        
+        // 状态变化：开始移动
+        if (isMoving && !wasMoving)
+        {
+            audioController.PlayMoveSound(moveClip, true);
+        }
+        // 状态变化：停止移动
+        else if (!isMoving && wasMoving)
+        {
+            audioController.StopMoveSound();
+        }
+        // 持续移动但音效已结束
+        else if (isMoving && !audioController.IsMoveSoundPlaying())
+        {
+            audioController.PlayMoveSound(moveClip, true);
+        }
+        
+        // 落地音效（仅固态和流动态）
+        if (player.CurrentState != Player.PlayerState.Gas && fallClip != null)
+        {
+            if (isGroundedNow && !wasGrounded)
+            {
+                float fallSpeed = Mathf.Abs(lastVerticalVelocity);
+                if (fallSpeed > 3f)
+                {
+                    audioController.PlaySfx(fallClip);
+                }
+            }
+        }
+        
+        // 更新状态
+        wasMoving = isMoving;
+        wasGrounded = isGroundedNow;
+    }
+
+    private bool CheckIfMoving()
+    {
+        if (rb == null) return false;
+        
+        float currentSpeed = rb.velocity.magnitude;
+        bool hasHorizontalInput = Mathf.Abs(horizontalInput) > 0.1f;
+        
+        // 不同状态有不同的移动判断标准
+        switch (player.CurrentState)
+        {
+            case Player.PlayerState.Solid:
+                return currentSpeed > minSpeedForSound && hasHorizontalInput;
+                
+            case Player.PlayerState.Liquid:
+                return currentSpeed > minSpeedForSound * 0.7f && hasHorizontalInput;
+                
+            case Player.PlayerState.Gas:
+                return currentSpeed > minSpeedForSound * 0.5f;
+                
+            default:
+                return false;
+        }
+    }
+
+        // ==========  获取当前状态的移动音效 ==========
+    private AudioClip GetMoveClipForCurrentState()
+    {
+        if (audioController == null) return null;
+        
+        switch (player.CurrentState)
+        {
+            case Player.PlayerState.Solid:
+                return cachedSolidMoveClip ?? audioController.solidMoveClip;
+            case Player.PlayerState.Liquid:
+                return cachedLiquidMoveClip ?? audioController.liquidMoveClip;
+            case Player.PlayerState.Gas:
+                return cachedGasMoveClip ?? audioController.gasMoveClip;
+            default:
+                return null;
+        }
     }
 
     // ========== 状态特定的移动逻辑 ==========
@@ -342,7 +512,6 @@ public class PlayerMovement : MonoBehaviour
         float rayLength = col.bounds.extents.y + 0.1f;
 
         // 多方向射线确保检测准确
-        // 修正：使用Vector2.left和Vector2.right代替Vector3
         RaycastHit2D hitCenter = Physics2D.Raycast(rayStart, Vector2.down, rayLength, groundLayer);
         RaycastHit2D hitLeft = Physics2D.Raycast(rayStart + (Vector2.left * col.bounds.extents.x * 0.7f),
                                                  Vector2.down, rayLength, groundLayer);
@@ -369,7 +538,6 @@ public class PlayerMovement : MonoBehaviour
         float rayLength = col.bounds.extents.y + ceilingCheckDistance;
 
         // 多方向检测天花板
-        // 修正：使用Vector2.left和Vector2.right代替Vector3
         RaycastHit2D hitCenter = Physics2D.Raycast(rayStart, Vector2.up, rayLength, groundLayer);
         RaycastHit2D hitLeft = Physics2D.Raycast(rayStart + (Vector2.left * col.bounds.extents.x * 0.7f),
                                                  Vector2.up, rayLength, groundLayer);
@@ -404,7 +572,7 @@ public class PlayerMovement : MonoBehaviour
             if (heightDifference > 0 && heightDifference <= stepHeight)
             {
                 Vector3 newPosition = transform.position;
-                newPosition.y = stepTop + col.bounds.extents.y + 0.05f; // 加微小偏移防止卡住
+                newPosition.y = stepTop + col.bounds.extents.y + 0.05f;
                 rb.MovePosition(newPosition);
 
                 Debug.Log($"攀爬台阶成功: 高度差={heightDifference:F2}");
@@ -487,7 +655,7 @@ public class PlayerMovement : MonoBehaviour
                 // 检查是否是上方碰撞（天花板）
                 foreach (ContactPoint2D contact in collision.contacts)
                 {
-                    if (contact.normal.y < -0.5f) // 向下法线碰撞（向上撞说明是上方撞）
+                    if (contact.normal.y < -0.5f)
                     {
                         Debug.Log($"气态撞到天花板: 法线={contact.normal}");
                         isTouchingCeiling = true;
@@ -511,4 +679,3 @@ public class PlayerMovement : MonoBehaviour
         externalVelocityLockTimer = Mathf.Max(externalVelocityLockTimer, duration);
     }
 }
-

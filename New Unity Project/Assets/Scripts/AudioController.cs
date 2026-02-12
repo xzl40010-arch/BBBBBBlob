@@ -54,6 +54,8 @@ public class AudioController : MonoBehaviour
     {
         if (MoveAudio == null || clip == null) return;
         
+        if (forceRestart) MoveAudio.Stop();
+
         // 如果已经在播放同一个音效，且不强制重启，则忽略
         if (MoveAudio.isPlaying && MoveAudio.clip == clip && !forceRestart)
         {
@@ -84,7 +86,14 @@ public class AudioController : MonoBehaviour
         // 开始淡出
         fadeCoroutine = StartCoroutine(FadeOutAndStop());
     }
-    
+    // 立即停止移动音效（无淡出）
+    public void StopMoveSoundImmediate()
+    {
+        if (MoveAudio != null)
+        {
+            MoveAudio.Stop();
+        }
+    }
     // 检查是否正在播放移动音效
     public bool IsMoveSoundPlaying()
     {
